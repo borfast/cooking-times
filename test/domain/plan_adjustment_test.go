@@ -9,7 +9,7 @@ import (
 
 func TestApplyAdjustmentsRemovesItems(t *testing.T) {
 	plan := domain.Plan{
-		ID:              "plan-1",
+		ID:               "plan-1",
 		StartTime:        time.Unix(0, 0),
 		TargetFinishTime: time.Unix(1800, 0),
 		TotalDuration:    30 * time.Minute,
@@ -36,7 +36,7 @@ func TestApplyAdjustmentsRemovesItems(t *testing.T) {
 
 func TestApplyAdjustmentsExtendsDuration(t *testing.T) {
 	plan := domain.Plan{
-		ID:              "plan-1",
+		ID:               "plan-1",
 		StartTime:        time.Unix(0, 0),
 		TargetFinishTime: time.Unix(1200, 0),
 		TotalDuration:    20 * time.Minute,

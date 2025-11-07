@@ -28,7 +28,7 @@ func TestRecalculateHandlerReturnsUpdatedPlan(t *testing.T) {
 	handler := httpiface.NewRecalculateHandler(svc)
 
 	body := map[string]any{
-		"plan_id": "plan-2",
+		"plan_id":         "plan-2",
 		"remove_food_ids": []string{"asparagus"},
 	}
 	payload, _ := json.Marshal(body)
