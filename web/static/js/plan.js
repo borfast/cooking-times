@@ -1,38 +1,20 @@
-const FOOD_DATA = [
-  {
-    id: "steak",
-    name: "Ribeye Steak",
-    levels: [
-      { level: "rare", label: "Rare" },
-      { level: "medium", label: "Medium" },
-      { level: "well", label: "Well done" },
-    ],
-  },
-  {
-    id: "asparagus",
-    name: "Asparagus Spears",
-    levels: [
-      { level: "crisp", label: "Crisp" },
-      { level: "tender", label: "Tender" },
-    ],
-  },
-  {
-    id: "potatoes",
-    name: "Roasted Potatoes",
-    levels: [{ level: "soft", label: "Soft" }],
-  },
-  {
-    id: "salmon",
-    name: "Salmon Fillet",
-    levels: [{ level: "medium", label: "Medium" }],
-  },
-];
-
 function plannerForm() {
   return {
     mode: "start_now",
-    foods: FOOD_DATA,
+    foods: [],
     items: [newPlannerItem()],
+    async init() {
+      // Fetch foods from the API
+      try {
+        const response = await fetch('/api/v1/foods');
+        const data = await response.json();
+        this.foods = data.foods || [];
+      } catch (err) {
+        console.error('Failed to load foods:', err);
+        // Fallback to empty array - user will see error in UI
+        this.foods = [];
+      }
+    },
     addItem() {
       this.items.push(newPlannerItem());
     },
@@ -43,11 +25,38 @@ function plannerForm() {
       const food = this.foods.find((f) => f.id === foodId);
       return food ? food.levels : [];
     },
+    getFoodOptionsHtml() {
+      let html = '<option value="">Select food</option>';
+      for (const food of this.foods) {
+        html += `<option value="${food.id}">${food.name}</option>`;
+      }
+      return html;
+    },
+    getLevelOptionsHtml(foodId) {
+      const levels = this.levelOptions(foodId);
+      let html = '<option value="">Select level</option>';
+      for (const level of levels) {
+        html += `<option value="${level.level}">${level.label}</option>`;
+      }
+      return html;
+    },
   };
 }
 
+function generateUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for browsers without crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 function newPlannerItem() {
-  return { id: crypto.randomUUID(), foodId: "", level: "" };
+  return { id: generateUUID(), foodId: "", level: "" };
 }
 
 function buildPayload(form) {

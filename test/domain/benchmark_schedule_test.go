@@ -10,18 +10,18 @@ import (
 func BenchmarkGeneratePlan(b *testing.B) {
 	profiles := map[string]domain.FoodProfile{
 		"steak": {
-			ID:   "steak",
-			Name: "Steak",
+			ID:             "steak",
+			Name:           "Steak",
 			DonenessLevels: []domain.DonenessOption{{Level: "medium", CookMinutes: 30}},
 		},
 		"potatoes": {
-			ID:   "potatoes",
-			Name: "Potatoes",
+			ID:             "potatoes",
+			Name:           "Potatoes",
 			DonenessLevels: []domain.DonenessOption{{Level: "soft", CookMinutes: 45}},
 		},
 		"asparagus": {
-			ID:   "asparagus",
-			Name: "Asparagus",
+			ID:             "asparagus",
+			Name:           "Asparagus",
 			DonenessLevels: []domain.DonenessOption{{Level: "tender", CookMinutes: 10}},
 		},
 	}

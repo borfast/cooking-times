@@ -52,6 +52,7 @@ func run() error {
 	}
 
 	rootMux := http.NewServeMux()
+	rootMux.Handle("/api/v1/foods", planhttp.NewFoodsHandler(repo))
 	rootMux.Handle("/api/v1/plans/generate", planhttp.NewPlanRouter(planService))
 	rootMux.Handle("/api/v1/plans/recalculate", planhttp.NewRecalculateHandler(recalcService))
 	rootMux.Handle("/api/v1/plans/", planhttp.NewGetPlanHandler(planRecovery))
