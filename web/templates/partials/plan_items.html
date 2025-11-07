@@ -1,0 +1,65 @@
+<div class="planner__adjustments" x-data="planEditorComponent()" x-show="plan" x-cloak x-init="init(plan)">
+  <h3>Edit active plan</h3>
+  <p class="planner__hint">Remove foods, adjust durations, or add steps to keep your timeline accurate.</p>
+
+  <div class="adjustments__actions">
+    <button type="button" class="secondary" x-show="!editing" x-on:click="toggleEditing()">Edit plan</button>
+    <button type="button" class="secondary" x-show="editing" x-on:click="toggleEditing()">Cancel</button>
+  </div>
+
+  <form x-show="editing" x-on:submit.prevent="submit">
+    <fieldset class="adjustment-section">
+      <legend>Remove foods</legend>
+      <template x-if="plan?.steps?.length">
+        <div class="chips">
+          <template x-for="step in plan.steps" :key="step.sequence_number">
+            <button type="button" class="chip" x-on:click="markForRemoval(step.food_id)">
+              <span x-text="step.food_id"></span>
+            </button>
+          </template>
+        </div>
+      </template>
+    </fieldset>
+
+    <fieldset class="adjustment-section">
+      <legend>Adjust durations (minutes)</legend>
+      <template x-if="plan?.steps?.length">
+        <div class="adjustment-grid">
+          <template x-for="step in plan.steps" :key="step.sequence_number + '-duration'">
+            <label>
+              <span x-text="step.food_id"></span>
+              <input type="number" min="1" x-on:input="updateDuration(step.food_id, $event.target.value)" placeholder="Current: ${Math.round((step.duration_seconds || 0)/60)}" />
+            </label>
+          </template>
+        </div>
+      </template>
+    </fieldset>
+
+    <fieldset class="adjustment-section">
+      <legend>Add step</legend>
+      <div class="adjustment-grid">
+        <label>
+          Food ID
+          <input type="text" x-ref="addFood" />
+        </label>
+        <label>
+          Offset (min)
+          <input type="number" min="0" x-ref="addOffset" />
+        </label>
+        <label>
+          Duration (min)
+          <input type="number" min="0" x-ref="addDuration" />
+        </label>
+        <label>
+          Message
+          <input type="text" x-ref="addMessage" placeholder="Start dessert" />
+        </label>
+      </div>
+      <button type="button" class="secondary" x-on:click="appendStep($refs.addFood.value, $refs.addOffset.value, $refs.addDuration.value, $refs.addMessage.value)">Add step</button>
+    </fieldset>
+
+    <div class="adjustment-section">
+      <button type="submit" class="primary">Apply changes</button>
+    </div>
+  </form>
+</div>

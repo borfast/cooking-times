@@ -1,0 +1,47 @@
+{
+  "foods": [
+    {
+      "id": "steak",
+      "name": "Ribeye Steak",
+      "category": "protein",
+      "prep_notes": "Bring to room temperature before cooking",
+      "default_rest_minutes": 5,
+      "doneness_levels": [
+        {"level": "rare", "cook_minutes": 20, "prep_buffer_minutes": 0},
+        {"level": "medium", "cook_minutes": 30, "prep_buffer_minutes": 0},
+        {"level": "well", "cook_minutes": 35, "prep_buffer_minutes": 0}
+      ]
+    },
+    {
+      "id": "asparagus",
+      "name": "Asparagus Spears",
+      "category": "vegetable",
+      "prep_notes": "Trim woody ends",
+      "default_rest_minutes": 0,
+      "doneness_levels": [
+        {"level": "crisp", "cook_minutes": 6, "prep_buffer_minutes": 0},
+        {"level": "tender", "cook_minutes": 10, "prep_buffer_minutes": 0}
+      ]
+    },
+    {
+      "id": "potatoes",
+      "name": "Roasted Potatoes",
+      "category": "starch",
+      "prep_notes": "Parboil for best texture",
+      "default_rest_minutes": 0,
+      "doneness_levels": [
+        {"level": "soft", "cook_minutes": 45, "prep_buffer_minutes": 0}
+      ]
+    },
+    {
+      "id": "salmon",
+      "name": "Salmon Fillet",
+      "category": "protein",
+      "prep_notes": "Pat dry and season before cooking",
+      "default_rest_minutes": 2,
+      "doneness_levels": [
+        {"level": "medium", "cook_minutes": 15, "prep_buffer_minutes": 0}
+      ]
+    }
+  ]
+}
