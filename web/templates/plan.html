@@ -67,18 +67,41 @@
                   Food
                   <select x-model="item.foodId" class="planner__select" data-food-select>
                     <option value="">Select food</option>
-                    <template x-for="food in foods" :key="food.id">
-                      <option :value="food.id" x-text="food.name"></option>
-                    </template>
+                    <option value="steak">Ribeye Steak</option>
+                    <option value="asparagus">Asparagus Spears</option>
+                    <option value="potatoes">Roasted Potatoes</option>
+                    <option value="salmon">Salmon Fillet</option>
                   </select>
                 </label>
-                <label>
+                <label x-show="item.foodId === 'steak'">
                   Doneness
                   <select x-model="item.level" class="planner__select" data-level-select>
                     <option value="">Select level</option>
-                    <template x-for="option in levelOptions(item.foodId)" :key="option.level">
-                      <option :value="option.level" x-text="option.label"></option>
-                    </template>
+                    <option value="rare">Rare</option>
+                    <option value="medium">Medium</option>
+                    <option value="well">Well done</option>
+                  </select>
+                </label>
+                <label x-show="item.foodId === 'asparagus'">
+                  Doneness
+                  <select x-model="item.level" class="planner__select" data-level-select>
+                    <option value="">Select level</option>
+                    <option value="crisp">Crisp</option>
+                    <option value="tender">Tender</option>
+                  </select>
+                </label>
+                <label x-show="item.foodId === 'potatoes'">
+                  Doneness
+                  <select x-model="item.level" class="planner__select" data-level-select>
+                    <option value="">Select level</option>
+                    <option value="soft">Soft</option>
+                  </select>
+                </label>
+                <label x-show="item.foodId === 'salmon'">
+                  Doneness
+                  <select x-model="item.level" class="planner__select" data-level-select>
+                    <option value="">Select level</option>
+                    <option value="medium">Medium</option>
                   </select>
                 </label>
                 <button
