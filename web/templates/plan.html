@@ -65,12 +65,20 @@
               <div class="planner__item">
                 <label>
                   Food
-                  <select x-model="item.foodId" class="planner__select" data-food-select x-html="getFoodOptionsHtml()">
+                  <select x-model="item.foodId" class="planner__select" data-food-select>
+                    <option value="">Select food</option>
+                    <template x-for="food in foods" :key="food.id">
+                      <option :value="food.id" x-text="food.name"></option>
+                    </template>
                   </select>
                 </label>
                 <label x-show="levelOptions(item.foodId).length > 0">
                   Doneness
-                  <select x-model="item.level" class="planner__select" data-level-select x-html="getLevelOptionsHtml(item.foodId)">
+                  <select x-model="item.level" class="planner__select" data-level-select>
+                    <option value="">Select level</option>
+                    <template x-for="level in levelOptions(item.foodId)" :key="level.level">
+                      <option :value="level.level" x-text="level.label"></option>
+                    </template>
                   </select>
                 </label>
                 <button

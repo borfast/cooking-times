@@ -25,21 +25,6 @@ function plannerForm() {
       const food = this.foods.find((f) => f.id === foodId);
       return food ? food.levels : [];
     },
-    getFoodOptionsHtml() {
-      let html = '<option value="">Select food</option>';
-      for (const food of this.foods) {
-        html += `<option value="${food.id}">${food.name}</option>`;
-      }
-      return html;
-    },
-    getLevelOptionsHtml(foodId) {
-      const levels = this.levelOptions(foodId);
-      let html = '<option value="">Select level</option>';
-      for (const level of levels) {
-        html += `<option value="${level.level}">${level.label}</option>`;
-      }
-      return html;
-    },
   };
 }
 
