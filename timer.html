@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cooking Timer - Execution</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+</head>
+<body>
+    <div class="container" x-data="timerApp()" x-init="init()">
+        <header class="app-header app-header--timer">
+            <div class="brand">
+                <span class="brand-mark">🍳</span>
+                <div>
+                    <h1>Cooking Timer</h1>
+                    <p class="subtitle">Keep every dish on track.</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="chip chip-live" x-text="statusMessage"></span>
+            </div>
+        </header>
+
+        <main class="layout layout--timer">
+            <!-- Main Timer Display -->
+            <section class="timer-display panel">
+                <div class="countdown" :class="{ 'alert-flash': alertActive }">
+                    <div class="time-remaining">
+                        <span class="time-label">Time Remaining</span>
+                        <span class="time-value" x-text="formatTime(remainingSeconds)"></span>
+                    </div>
+                    <div class="time-elapsed">
+                        <span class="time-label">Elapsed</span>
+                        <span class="time-value-small" x-text="formatTime(elapsedSeconds)"></span>
+                    </div>
+                </div>
+
+                <!-- Timer Controls -->
+                <div class="timer-controls">
+                    <template x-if="status === 'created'">
+                        <button @click="start()" class="btn btn-success btn-large">
+                            Start Cooking
+                        </button>
+                    </template>
+                    <template x-if="status === 'running'">
+                        <button @click="pause()" class="btn btn-warning btn-large">
+                            Pause
+                        </button>
+                    </template>
+                    <template x-if="status === 'paused'">
+                        <button @click="resume()" class="btn btn-success btn-large">
+                            Resume
+                        </button>
+                    </template>
+                    <template x-if="status === 'completed'">
+                        <div class="completed-message">
+                            All Done! Enjoy your meal!
+                        </div>
+                    </template>
+                    <button @click="reset()" class="btn btn-danger" x-show="status !== 'created'">
+                        Reset
+                    </button>
+                    <a href="index.html" class="btn btn-secondary">Back to Planning</a>
+                </div>
+            </section>
+
+            <!-- Alert Notification -->
+            <div x-show="currentAlert" x-transition class="alert-popup" :class="alertType">
+                <div class="alert-content">
+                    <strong x-text="currentAlert?.message"></strong>
+                    <button @click="dismissAlert()" class="btn btn-small">Dismiss</button>
+                </div>
+            </div>
+
+            <!-- Food Schedule List -->
+            <section class="food-schedule panel">
+                <h2>Cooking Schedule</h2>
+                <template x-for="item in schedule.items" :key="item.foodId">
+                    <div class="food-timer-item" :class="{
+                        'cooking': isCooking(item),
+                        'waiting': isWaiting(item),
+                        'done': isDone(item),
+                        'editing': editingFood === item.foodId
+                    }">
+                        <div class="food-info">
+                            <strong x-text="item.foodName"></strong>
+                            <!-- Editable doneness for waiting foods -->
+                            <template x-if="isWaiting(item) && canEdit()">
+                                <select
+                                    class="doneness-edit-select"
+                                    :value="item.doneness"
+                                    @change="changeDoneness(item.foodId, $event.target.value)"
+                                >
+                                    <option value="rare" :selected="item.doneness === 'rare'">Rare</option>
+                                    <option value="medium" :selected="item.doneness === 'medium'">Medium</option>
+                                    <option value="well-done" :selected="item.doneness === 'well-done'">Well Done</option>
+                                </select>
+                            </template>
+                            <!-- Non-editable doneness display for cooking/done foods -->
+                            <template x-if="!isWaiting(item) || !canEdit()">
+                                <span class="doneness" x-text="item.doneness"></span>
+                            </template>
+                        </div>
+                        <div class="food-timing">
+                            <template x-if="isWaiting(item)">
+                                <span class="start-in">
+                                    Starts in: <strong x-text="formatTime(item.startTime - elapsedSeconds)"></strong>
+                                </span>
+                            </template>
+                            <template x-if="isCooking(item)">
+                                <span class="cooking-time">
+                                    Done in: <strong x-text="formatTime(item.finishTime - elapsedSeconds)"></strong>
+                                </span>
+                            </template>
+                            <template x-if="isDone(item)">
+                                <span class="done-label">Done!</span>
+                            </template>
+                        </div>
+                        <div class="food-actions">
+                            <!-- Remove button for waiting foods -->
+                            <template x-if="isWaiting(item) && canEdit()">
+                                <button @click="removeFood(item.foodId)" class="btn btn-danger btn-small" title="Remove">
+                                    ✕
+                                </button>
+                            </template>
+                            <div class="food-status-indicator"></div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Add Food Section (only when timer is running/paused) -->
+                <template x-if="canEdit() && !addingFood">
+                    <button @click="startAddingFood()" class="btn btn-primary add-food-timer-btn">
+                        + Add Food
+                    </button>
+                </template>
+
+                <!-- Add Food Form -->
+                <template x-if="addingFood">
+                    <div class="add-food-form">
+                        <select x-model="newFoodId" class="food-select">
+                            <option value="">Select a food...</option>
+                            <template x-for="food in availableFoods" :key="food.id">
+                                <option :value="food.id" x-text="food.name"></option>
+                            </template>
+                        </select>
+                        <select x-model="newFoodDoneness" class="doneness-select">
+                            <option value="rare">Rare</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="well-done">Well Done</option>
+                        </select>
+                        <button @click="addFood()" class="btn btn-success" :disabled="!newFoodId">Add</button>
+                        <button @click="cancelAddFood()" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </template>
+
+                <div class="total-time-display">
+                    <span>Total Cooking Time:</span>
+                    <strong x-text="formatTime(schedule.totalTime)"></strong>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="static/js/timer.js"></script>
+</body>
+</html>

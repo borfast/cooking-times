@@ -1,0 +1,304 @@
+{
+  "foods": [
+    {
+      "id": "chicken",
+      "name": "Chicken",
+      "category": "Meat",
+      "cookingTimes": {
+        "rare": 900,
+        "medium": 1500,
+        "well-done": 2100
+      }
+    },
+    {
+      "id": "potatoes",
+      "name": "Potatoes",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 600,
+        "medium": 1200,
+        "well-done": 1500
+      }
+    },
+    {
+      "id": "carrots",
+      "name": "Carrots",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 300,
+        "medium": 600,
+        "well-done": 900
+      }
+    },
+    {
+      "id": "kale",
+      "name": "Kale",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 180,
+        "medium": 360,
+        "well-done": 540
+      }
+    },
+    {
+      "id": "rice",
+      "name": "Rice",
+      "category": "Grains",
+      "cookingTimes": {
+        "rare": 900,
+        "medium": 1200,
+        "well-done": 1500
+      }
+    },
+    {
+      "id": "broccoli",
+      "name": "Broccoli",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 180,
+        "medium": 300,
+        "well-done": 420
+      }
+    },
+    {
+      "id": "salmon",
+      "name": "Salmon",
+      "category": "Fish",
+      "cookingTimes": {
+        "rare": 480,
+        "medium": 720,
+        "well-done": 960
+      }
+    },
+    {
+      "id": "green-beans",
+      "name": "Green Beans",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 240,
+        "medium": 360,
+        "well-done": 480
+      }
+    },
+    {
+      "id": "asparagus",
+      "name": "Asparagus",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 180,
+        "medium": 300,
+        "well-done": 420
+      }
+    },
+    {
+      "id": "sweet-potatoes",
+      "name": "Sweet Potatoes",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 1200,
+        "medium": 1800,
+        "well-done": 2400
+      }
+    },
+    {
+      "id": "beef-steak",
+      "name": "Beef Steak",
+      "category": "Meat",
+      "cookingTimes": {
+        "rare": 360,
+        "medium": 480,
+        "well-done": 600
+      }
+    },
+    {
+      "id": "pork-chop",
+      "name": "Pork Chop",
+      "category": "Meat",
+      "cookingTimes": {
+        "rare": 480,
+        "medium": 600,
+        "well-done": 720
+      }
+    },
+    {
+      "id": "lamb-chop",
+      "name": "Lamb Chop",
+      "category": "Meat",
+      "cookingTimes": {
+        "rare": 300,
+        "medium": 420,
+        "well-done": 540
+      }
+    },
+    {
+      "id": "duck-breast",
+      "name": "Duck Breast",
+      "category": "Meat",
+      "cookingTimes": {
+        "rare": 480,
+        "medium": 600,
+        "well-done": 720
+      }
+    },
+    {
+      "id": "turkey-breast",
+      "name": "Turkey Breast",
+      "category": "Meat",
+      "cookingTimes": {
+        "rare": 900,
+        "medium": 1200,
+        "well-done": 1500
+      }
+    },
+    {
+      "id": "tuna-steak",
+      "name": "Tuna Steak",
+      "category": "Fish",
+      "cookingTimes": {
+        "rare": 120,
+        "medium": 240,
+        "well-done": 360
+      }
+    },
+    {
+      "id": "cod-fillet",
+      "name": "Cod Fillet",
+      "category": "Fish",
+      "cookingTimes": {
+        "rare": 480,
+        "medium": 600,
+        "well-done": 720
+      }
+    },
+    {
+      "id": "shrimp",
+      "name": "Shrimp",
+      "category": "Fish",
+      "cookingTimes": {
+        "rare": 120,
+        "medium": 180,
+        "well-done": 240
+      }
+    },
+    {
+      "id": "scallops",
+      "name": "Scallops",
+      "category": "Fish",
+      "cookingTimes": {
+        "rare": 120,
+        "medium": 180,
+        "well-done": 240
+      }
+    },
+    {
+      "id": "cauliflower",
+      "name": "Cauliflower",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 300,
+        "medium": 600,
+        "well-done": 900
+      }
+    },
+    {
+      "id": "brussels-sprouts",
+      "name": "Brussels Sprouts",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 480,
+        "medium": 720,
+        "well-done": 900
+      }
+    },
+    {
+      "id": "zucchini",
+      "name": "Zucchini",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 180,
+        "medium": 300,
+        "well-done": 420
+      }
+    },
+    {
+      "id": "eggplant",
+      "name": "Eggplant",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 300,
+        "medium": 600,
+        "well-done": 900
+      }
+    },
+    {
+      "id": "bell-peppers",
+      "name": "Bell Peppers",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 180,
+        "medium": 300,
+        "well-done": 420
+      }
+    },
+    {
+      "id": "quinoa",
+      "name": "Quinoa",
+      "category": "Grains",
+      "cookingTimes": {
+        "rare": 720,
+        "medium": 900,
+        "well-done": 1080
+      }
+    },
+    {
+      "id": "brown-rice",
+      "name": "Brown Rice",
+      "category": "Grains",
+      "cookingTimes": {
+        "rare": 1800,
+        "medium": 2400,
+        "well-done": 2700
+      }
+    },
+    {
+      "id": "pasta-penne",
+      "name": "Pasta (Penne)",
+      "category": "Grains",
+      "cookingTimes": {
+        "rare": 480,
+        "medium": 600,
+        "well-done": 720
+      }
+    },
+    {
+      "id": "couscous",
+      "name": "Couscous",
+      "category": "Grains",
+      "cookingTimes": {
+        "rare": 300,
+        "medium": 420,
+        "well-done": 600
+      }
+    },
+    {
+      "id": "tofu",
+      "name": "Tofu",
+      "category": "Other",
+      "cookingTimes": {
+        "rare": 300,
+        "medium": 600,
+        "well-done": 900
+      }
+    },
+    {
+      "id": "mushrooms",
+      "name": "Mushrooms",
+      "category": "Vegetables",
+      "cookingTimes": {
+        "rare": 180,
+        "medium": 300,
+        "well-done": 420
+      }
+    }
+  ]
+}

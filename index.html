@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cooking Timer - Plan Your Meal</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <div class="brand">
+                <span class="brand-mark">🍳</span>
+                <div>
+                    <h1>Coordinated Cooking</h1>
+                    <p class="subtitle">Plan a synchronized finish for every dish.</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="chip">Plan. Sync. Serve.</span>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="food-selector panel">
+                <div class="section-head">
+                    <div>
+                        <h2>Select foods</h2>
+                        <p class="section-hint">Build the menu and choose doneness.</p>
+                    </div>
+                </div>
+                <div id="food-list" class="stack"></div>
+                <button id="add-food-btn" class="btn btn-primary btn-cta">+ Add Food</button>
+            </section>
+
+            <section class="schedule-display panel" id="schedule-section" style="display: none;">
+                <div class="section-head">
+                    <div>
+                        <h2>Cooking schedule</h2>
+                        <p class="section-hint">We time each start so everything finishes together.</p>
+                    </div>
+                </div>
+                <div id="schedule-output" class="schedule-list"></div>
+                <button id="start-timer-btn" class="btn btn-success btn-cta">Start Timer</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="static/js/schedule.js"></script>
+</body>
+</html>
