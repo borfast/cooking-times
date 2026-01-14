@@ -39,6 +39,8 @@ body {
         radial-gradient(1100px circle at 12% -10%, rgba(255, 107, 74, 0.24), transparent 52%),
         radial-gradient(900px circle at 90% 0%, rgba(43, 182, 115, 0.18), transparent 48%),
         linear-gradient(180deg, #f8f5f1 0%, #f1efe9 45%, #f4f7fb 100%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
@@ -551,14 +553,27 @@ a:focus-visible {
 }
 
 .add-food-form {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 0.75rem;
     padding: 1rem;
     margin-top: 1rem;
     background: rgba(255, 107, 74, 0.08);
     border-radius: var(--radius-md);
     border: 1px dashed rgba(255, 107, 74, 0.5);
+}
+
+.add-food-form .food-select {
+    flex: 2 1 160px;
+}
+
+.add-food-form .doneness-select {
+    flex: 1 1 110px;
+}
+
+.add-food-form .btn {
+    flex: 0 0 auto;
 }
 
 .total-time-display {
@@ -620,7 +635,8 @@ a:focus-visible {
     }
 
     .add-food-form {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 
