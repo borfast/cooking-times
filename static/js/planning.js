@@ -21,10 +21,12 @@ import {
     groupByCategory,
 } from './core/foods.js';
 import { applyStrategy, describeConflicts } from './core/capacity.js';
+import { runsheetText } from './core/runsheet.js';
 
 let foods = [];
 let selectedFoods = [];
 let rowCounter = 0;
+let lastResult = { items: [], totalTime: 0, moved: [], conflicts: null, strategy: 'warn' };
 
 // G8: inline messaging instead of blocking alert() dialogs.
 function showMessage(text, tone = 'error') {
@@ -321,6 +323,7 @@ function displaySchedule(result) {
     const section = document.getElementById('schedule-section');
     const output = document.getElementById('schedule-output');
 
+    lastResult = result;
     displayConflicts(result);
 
     let html = '';
@@ -410,6 +413,47 @@ function addCustomFood() {
     showMessage(`Added ${name}.`, 'notice');
 }
 
+/** G26: the serve time as a minute-of-day, or null when the field is blank. */
+function serveAtMinutes() {
+    const value = document.getElementById('serve-at').value;
+    if (!value) {
+        return null;
+    }
+    const [hours, minutes] = value.split(':').map(Number);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+        return null;
+    }
+    return hours * 60 + minutes;
+}
+
+async function copyRunsheet() {
+    const text = runsheetText(lastResult, { readyAt: serveAtMinutes() });
+
+    try {
+        await navigator.clipboard.writeText(text);
+        showMessage('Running order copied.', 'notice');
+        return;
+    } catch (error) {
+        console.warn('Clipboard API unavailable, falling back to a selection:', error);
+    }
+
+    // Fallback for browsers without the Clipboard API, or a denied permission.
+    const scratch = document.createElement('textarea');
+    scratch.value = text;
+    scratch.setAttribute('readonly', '');
+    scratch.style.position = 'fixed';
+    scratch.style.opacity = '0';
+    document.body.appendChild(scratch);
+    scratch.select();
+    const copied = document.execCommand && document.execCommand('copy');
+    document.body.removeChild(scratch);
+
+    showMessage(
+        copied ? 'Running order copied.' : 'Could not copy — select the schedule and copy manually.',
+        copied ? 'notice' : 'error',
+    );
+}
+
 // G13/G14: what this kitchen can actually do.
 function restoreKitchen() {
     const kitchen = readKitchen(localStorage);
@@ -433,6 +477,10 @@ function onKitchenChange() {
 for (const id of ['kitchen-capacity', 'kitchen-transition', 'kitchen-strategy']) {
     document.getElementById(id).addEventListener('change', onKitchenChange);
 }
+
+document.getElementById('copy-runsheet').addEventListener('click', copyRunsheet);
+document.getElementById('print-runsheet').addEventListener('click', () => window.print());
+document.getElementById('serve-at').addEventListener('change', updateSchedule);
 
 document.getElementById('add-food-btn').addEventListener('click', () => addRow());
 document.getElementById('custom-food-add').addEventListener('click', addCustomFood);

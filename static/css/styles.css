@@ -887,3 +887,51 @@ a:focus-visible {
     white-space: nowrap;
     border: 0;
 }
+
+/* G26: taking the plan away from the screen. */
+.runsheet-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.runsheet-actions label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+@media print {
+    .kitchen-settings,
+    .custom-food,
+    .food-selector,
+    .runsheet-actions,
+    .header-actions,
+    .inline-message,
+    #add-food-btn,
+    #start-timer-btn {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+    }
+
+    .panel {
+        box-shadow: none;
+        border: 1px solid #999;
+    }
+
+    .conflict-panel {
+        border: 1px solid #999;
+        background: none;
+    }
+}
