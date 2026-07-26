@@ -172,6 +172,8 @@ The two screens use different front-end techniques. The planning screen builds D
 
 The catalogue is fetched with `fetch('static/foods.json')` by both screens independently.
 
+*As of Phase 5* nothing loads from a third party: Alpine and both font families live in `static/vendor/`, a root `sw.js` precaches the app shell, and `manifest.webmanifest` plus locally generated icons make the app installable. There is still no build step — vendoring is checked-in files, not tooling.
+
 ### 3.2 Storage contract
 
 Two keys, written by different screens, with overlapping content:
@@ -185,7 +187,7 @@ The `items` array inside `cooking-schedule` is written with every `startTime` se
 
 ### 3.3 Styling
 
-A single stylesheet with CSS custom properties for colour, typography, radii, and shadows. Display face Fraunces, body face Manrope, both pulled from Google Fonts via `@import`. Layered radial-gradient page background. Responsive at three breakpoints (980px promotes the planning screen to two columns; 900px and 700px collapse layout and controls). `prefers-reduced-motion: reduce` is honoured.
+A single stylesheet with CSS custom properties for colour, typography, radii, and shadows. Display face Fraunces, body face Manrope, *vendored locally as of Phase 5* and imported from `static/vendor/fonts.css` (latin and latin-ext subsets only, stored by content hash because both are variable fonts served identically for every weight). Layered radial-gradient page background. Responsive at three breakpoints (980px promotes the planning screen to two columns; 900px and 700px collapse layout and controls). `prefers-reduced-motion: reduce` is honoured.
 
 The stylesheet is essentially complete against the markup: of the classes the two HTML files reference, only `app-header--timer` and `time-elapsed` have no rule. Both are inert — the timer header consequently renders identically to the planning header, and the elapsed-time block relies on its already-styled children — so they are unfinished hooks rather than visible breakage.
 
@@ -243,13 +245,13 @@ The scheduler will happily tell you to have six things cooking at once. Real kit
 
 **G14 — Zero prep and transition time.** Items scheduled two seconds apart are assumed startable two seconds apart. In practice each start costs you draining, seasoning, or finding the lid. *Closed in Phase 4: a changeover time is declared per kitchen, starts closer together than it are reported as conflicts, and both non-warn strategies space starts by at least that much where they have room.*
 
-**G15 — No screen wake lock.** A kitchen timer's device will sleep. The Screen Wake Lock API exists for precisely this. Without it the alarm still fires — audio and notifications survive — but the at-a-glance display, which is the reason to use this over a phone timer, does not.
+**G15 — No screen wake lock.** A kitchen timer's device will sleep. The Screen Wake Lock API exists for precisely this. Without it the alarm still fires — audio and notifications survive — but the at-a-glance display, which is the reason to use this over a phone timer, does not. *Closed in Phase 5: a screen lock is held while cooking, released on pause, complete and reset, and retaken on `visibilitychange` because browsers drop it whenever the page is hidden. Browser testing exposed a race the unit tests had missed — a release landing while a request was in flight was overwritten when the request resolved, leaving the screen awake indefinitely — now guarded and pinned by a regression test.*
 
-**G16 — The app does not work offline.** Alpine loads from unpkg and the fonts load from Google Fonts, both blocking. A kitchen on flaky wifi gets an unstyled or non-functional timer. There is no service worker, no manifest, no favicon; it cannot be installed to a home screen. For a device-in-the-kitchen use case this matters more than it would for most apps.
+**G16 — The app does not work offline.** Alpine loads from unpkg and the fonts load from Google Fonts, both blocking. A kitchen on flaky wifi gets an unstyled or non-functional timer. There is no service worker, no manifest, no favicon; it cannot be installed to a home screen. For a device-in-the-kitchen use case this matters more than it would for most apps. *Closed in Phase 5: Alpine and both font families are vendored into `static/vendor/`, a service worker precaches a 24-entry app shell, and there is a manifest with locally generated icons. Verified with the server stopped: both pages load styled, the catalogue loads from cache, and a schedule can be built and exported with no network at all.*
 
-**G17 — Alpine is loaded from a CDN without Subresource Integrity.** The version is pinned, which is good; the content is not verified, which means unpkg is in the trust boundary of the page.
+**G17 — Alpine is loaded from a CDN without Subresource Integrity.** The version is pinned, which is good; the content is not verified, which means unpkg is in the trust boundary of the page. *Closed in Phase 5 by removing the CDN rather than by adding SRI: Alpine is vendored locally, so no third-party origin remains in either page and there is nothing for a CDN compromise to reach.*
 
-**G18 — Accessibility gaps.** The alert popup has no `role="alert"` or live region, so a screen reader is never told it is time to start the potatoes — which is the entire point of the app. Neither screen's selects have `<label>`s. The timer's remove button conveys its purpose through `title` alone, where the planning screen's equivalent correctly uses `aria-label`. The countdown updates 60 times a second in the accessibility tree.
+**G18 — Accessibility gaps.** The alert popup has no `role="alert"` or live region, so a screen reader is never told it is time to start the potatoes — which is the entire point of the app. Neither screen's selects have `<label>`s. The timer's remove button conveys its purpose through `title` alone, where the planning screen's equivalent correctly uses `aria-label`. The countdown updates 60 times a second in the accessibility tree. *Closed in Phase 5: the alert popup is a `role="alert"` assertive live region that stays in the DOM so its changing text is announced, with a separate polite `aria-atomic` region for pause, resume and completion. The two ticking values are `aria-hidden` with non-ticking readable equivalents alongside, so the time is available on demand without the tree churning. An audit of both pages now reports zero unnamed form controls and zero unnamed icon-only buttons. (The 60 Hz churn itself was already fixed in Phase 2 by G10.)*
 
 **G19 — No dark mode.** `color-scheme: light` is declared and no `prefers-color-scheme` rules exist. *Closed in Phase 2: dark mode via prefers-color-scheme, overriding the custom properties only.*
 
@@ -273,7 +275,7 @@ Thirty foods, no way to add a thirty-first, no way to correct a time you disagre
 There is no way to say "the steak should rest for five minutes", "serve the soup first", or "keep the potatoes warm". Resting time in particular is standard practice for exactly the meat this app schedules, and the model has no slot for it. *Closed in Phase 4 for resting; serve order remains open. A dish now has two phases — on the heat, then resting off it — so resting meat lands with everything else, a resting dish occupies no burner for capacity purposes, and the timer announces both putting it on and taking it off. Per-dish serve offsets were explicitly excluded by D4.*
 
 **G26 — The schedule cannot be followed away from the screen.**
-It exists as a live countdown and nothing else — no printable or copyable running order, no "start the chicken at 18:42" wall-clock version. The plan is only legible while the tab is open and the timer is running.
+It exists as a live countdown and nothing else — no printable or copyable running order, no "start the chicken at 18:42" wall-clock version. The plan is only legible while the tab is open and the timer is running. *Closed in Phase 5: the running order can be copied as plain text or printed, optionally with wall-clock times counted back from a serve time — "start the steak at 19:17" rather than "at 0:00". Clock times are display-only; the schedule itself stays in seconds from t=0.*
 
 ---
 

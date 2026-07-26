@@ -63,10 +63,12 @@ Repaid Phase 2's duplicate-rejection debt via D6. That also fixed a latent bug t
 
 The two placers are greedy heuristics, and their asymmetry is documented and tested: nothing can start before t=0, so `stagger` is best-effort — it can do nothing at all when every dish is the same length, and can never beat the ring-time a fixed total allows — whereas `extend` always has room later and always resolves. Residue is reported rather than hidden.
 
-### Phase 5 — Platform and access
-**Plan:** to be written on completion of Phase 4.
+### Phase 5 — Platform and access ✅
+**Plan:** `2026-07-26-phase-5-platform-and-access.md`
 **Closes:** G15, G16, G17, G18, G26
 **Ships:** Screen wake lock, fully offline operation with vendored assets (D3), installable PWA, a screen-reader-usable alert path, and an exportable/printable running order with wall-clock times.
+
+G17 is closed by *removing* the CDN rather than by adding SRI — once Alpine is local, no third-party origin remains for a CDN compromise to reach.
 
 ## Coverage check
 
@@ -87,3 +89,30 @@ Two claims in the spec were imprecise and are corrected as part of Phase 1:
 
 - **G11** describes the two `calculateSchedule` copies as duplicated "verbatim" and "identical today". They are logically equivalent but not textually identical: `static/js/schedule.js:153` guards with `foods.length === 0` and throws on `null`, while `static/js/timer.js:119` guards with `!foods || foods.length === 0`. The timer's copy is the safer one, and the extracted module adopts it.
 - **G11** also lists `formatTime` as duplicated. It is worse than duplicated: the copy in `static/js/schedule.js:219` is dead code, never referenced from that file or from `index.html`, because `displaySchedule` formats inline instead.
+
+
+## Outcome
+
+All 26 gaps are addressed across five phases, 30 commits and 143 unit tests, with no installed dependencies and no build step. Every fix was verified in a real browser as well as by unit test; several were measured rather than asserted (write rate, tick rate, AudioContext count, offline operation with the server stopped).
+
+**Four gaps are closed only in part, and the shortfall is recorded in the spec rather than glossed:**
+
+| Gap | Closed | Still open |
+| --- | --- | --- |
+| G20 | 143 unit tests over the whole core | Linting and CI |
+| G23 | Times are correctable per dish and remembered | No model of quantity, thickness or method |
+| G25 | Resting, as a distinct phase off the heat | Serve order — excluded by D4 |
+| G3 | Per-row identity, duplicates supported | — (fully closed in Phase 3) |
+
+**Two decisions were corrected mid-flight**, both because the original was unachievable rather than merely suboptimal:
+
+- **D2** had `extend` push the common finish later to relieve capacity. Overlap is invariant under the common finish, so this cannot work; both non-`warn` strategies necessarily break the synchronised finish, differing only in direction.
+- **Phase 3's migration step** was dropped once the user confirmed the tool has no users (D7).
+
+**Three bugs were found that the original gaps register had missed**, all by writing tests or driving a browser rather than by reading:
+
+1. Alert regeneration matched on `foodName`, so two portions of one food shared an alert — firing the first silenced the second, and the cook was never told to put it on. (Found while rekeying to `itemId` in Phase 3.)
+2. A wake-lock release landing while a request was in flight was overwritten when that request resolved, leaving a phone screen awake indefinitely after the timer stopped. (Found in the browser in Phase 5; unit tests had passed.)
+3. `formatTime` in the old `schedule.js` was not merely duplicated but dead — never called from anywhere. (Found while planning Phase 1.)
+
+**Known limitation worth carrying forward.** The two capacity placers are greedy heuristics, not optimal — packing dishes under a concurrency cap is bin-packing. `stagger` in particular is best-effort: nothing can start before t=0, so it can do nothing at all when every dish is the same length, and can never beat the ring-time a fixed total allows. Both report unresolvable residue rather than hiding it.
