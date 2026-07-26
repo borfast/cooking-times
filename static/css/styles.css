@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap");
 
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --font-display: "Fraunces", "Playfair Display", "Georgia", serif;
     --font-sans: "Manrope", "Figtree", "Noto Sans", sans-serif;
     --color-ink: #15161a;
@@ -675,4 +675,42 @@ a:focus-visible {
 .inline-message--notice {
     border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
     color: var(--color-primary-strong);
+}
+
+/* Spec §3.3 found these two referenced by timer.html with no rule at all. */
+.app-header--timer {
+    margin-bottom: clamp(1rem, 2.5vw, 2rem);
+}
+
+.time-elapsed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--color-muted);
+}
+
+/* G19: dark mode. Only the custom properties and the page backdrop change —
+   every component reads its colours from these. */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-ink: #f2f3f5;
+        --color-muted: #a3abb8;
+        --color-primary: #ff8163;
+        --color-primary-strong: #ff9a80;
+        --color-success: #3ecf8e;
+        --color-warning: #f7b955;
+        --color-danger: #ff6369;
+        --color-border: rgba(226, 232, 240, 0.16);
+        --color-panel: rgba(24, 26, 32, 0.92);
+        --color-panel-strong: #1c1f26;
+        --shadow-card: 0 24px 60px -40px rgba(0, 0, 0, 0.9);
+        --shadow-soft: 0 12px 30px -24px rgba(0, 0, 0, 0.85);
+    }
+
+    body {
+        background:
+            radial-gradient(1100px circle at 12% -10%, rgba(255, 129, 99, 0.18), transparent 52%),
+            radial-gradient(900px circle at 90% 0%, rgba(62, 207, 142, 0.14), transparent 48%),
+            linear-gradient(180deg, #12141a 0%, #14161d 45%, #11141b 100%);
+    }
 }

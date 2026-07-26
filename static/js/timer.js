@@ -1,7 +1,12 @@
 import { calculateSchedule, recalculateSchedule } from './core/schedule.js';
 import { formatTime as formatDuration } from './core/format.js';
-
-const STORAGE_KEY = 'cooking-timer-session';
+import { readPlan, readSession, writeSession, clearSession } from './core/storage.js';
+import {
+    generateAlerts,
+    regenerateAlerts,
+    partitionDueAlerts,
+    summariseMissed,
+} from './core/alerts.js';
 
 function timerApp() {
     return {
@@ -17,6 +22,12 @@ function timerApp() {
         alertActive: false,
         alertType: '',
         timerInterval: null,
+        lastTickSecond: null,
+        lastSavedSecond: null,
+
+        // G8: inline messaging instead of blocking alert() dialogs.
+        message: '',
+        messageTone: 'error',
 
         // T059-T062: State for editing during timer
         availableFoods: [],
@@ -42,24 +53,15 @@ function timerApp() {
             // Load available foods from API for add food functionality
             await this.loadAvailableFoods();
 
-            // Try to restore session from localStorage
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                try {
-                    const session = JSON.parse(saved);
-                    this.restoreSession(session);
-                } catch (e) {
-                    console.error('Failed to restore session:', e);
-                    this.loadFromScheduleStorage();
-                }
+            const session = readSession(localStorage);
+            if (session) {
+                this.restoreSession(session);
             } else {
                 this.loadFromScheduleStorage();
             }
 
-            // Request notification permission
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
+            // G9: notification permission is requested from start(), on a user
+            // gesture. Browsers penalise prompts raised on page load.
         },
 
         // T059: Load available foods from API
@@ -74,29 +76,26 @@ function timerApp() {
         },
 
         loadFromScheduleStorage() {
-            // Load schedule from planning page
-            const scheduleData = localStorage.getItem('cooking-schedule');
-            if (scheduleData) {
-                try {
-                    const data = JSON.parse(scheduleData);
-                    this.selectedFoods = data.selectedFoods || [];
-                    this.schedule = calculateSchedule(this.selectedFoods);
-                    this.alerts = this.generateAlerts();
-                    this.remainingSeconds = this.schedule.totalTime;
-                } catch (e) {
-                    console.error('Failed to load schedule:', e);
-                    alert('No cooking schedule found. Please go back and select foods.');
-                }
-            } else {
-                alert('No cooking schedule found. Please go back and select foods.');
+            const selections = readPlan(localStorage);
+            if (selections.length === 0) {
+                this.schedule = { items: [], totalTime: 0 };
+                this.alerts = [];
+                this.remainingSeconds = 0;
+                this.notify('No cooking schedule found. Go back to planning to build one.');
+                return;
             }
+
+            this.selectedFoods = selections;
+            this.schedule = calculateSchedule(this.selectedFoods);
+            this.alerts = generateAlerts(this.schedule);
+            this.remainingSeconds = this.schedule.totalTime;
         },
 
         restoreSession(session) {
             this.schedule = session.schedule;
             this.status = session.status;
             this.selectedFoods = session.selectedFoods || [];
-            this.alerts = session.alerts || this.generateAlerts();
+            this.alerts = session.alerts || generateAlerts(this.schedule);
 
             if (session.startedAt) {
                 this.startedAt = new Date(session.startedAt);
@@ -116,31 +115,24 @@ function timerApp() {
             }
         },
 
-        // Generate alerts from schedule
-        generateAlerts() {
-            const alerts = [];
-            for (const item of this.schedule.items) {
-                alerts.push({
-                    type: 'food-start',
-                    triggerTime: item.startTime,
-                    foodName: item.foodName,
-                    message: `Time to start cooking ${item.foodName}!`,
-                    triggered: false
-                });
-            }
-            alerts.push({
-                type: 'all-done',
-                triggerTime: this.schedule.totalTime,
-                foodName: '',
-                message: 'All done! Your meal is ready!',
-                triggered: false
-            });
-            return alerts;
+        // G8: inline messaging instead of blocking alert() dialogs.
+        notify(text, tone = 'error') {
+            this.message = text;
+            this.messageTone = tone;
+        },
+
+        dismissMessage() {
+            this.message = '';
         },
 
         // Timer controls
         start() {
             if (this.status !== 'created') return;
+
+            // G9: browsers penalise permission prompts not tied to a gesture.
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
 
             this.status = 'running';
             this.startedAt = new Date();
@@ -163,6 +155,7 @@ function timerApp() {
             this.status = 'running';
             // Adjust startedAt to account for pause duration
             this.startedAt = new Date(Date.now() - (this.pausedElapsed * 1000));
+            this.lastTickSecond = null;
             this.startTimerLoop();
             this.saveSession();
         },
@@ -173,12 +166,17 @@ function timerApp() {
             this.startedAt = null;
             this.pausedElapsed = 0;
             this.elapsedSeconds = 0;
-            this.remainingSeconds = this.schedule.totalTime;
             this.currentAlert = null;
             this.alertActive = false;
-            this.alerts = this.generateAlerts();
-            // Clear session so next timer load uses fresh schedule data
-            localStorage.removeItem(STORAGE_KEY);
+            this.lastTickSecond = null;
+            this.lastSavedSecond = null;
+            this.dismissMessage();
+
+            // G4: Reset means "start over from the plan I made". It used to keep
+            // whatever mid-cook edits were in memory, so Reset-then-Start and
+            // Reset-then-reload produced different meals.
+            clearSession(localStorage);
+            this.loadFromScheduleStorage();
         },
 
         // Timer loop using requestAnimationFrame for accuracy
@@ -202,19 +200,27 @@ function timerApp() {
         updateTimer() {
             if (!this.startedAt) return;
 
-            this.elapsedSeconds = Math.floor((Date.now() - this.startedAt.getTime()) / 1000);
-            this.remainingSeconds = Math.max(0, this.schedule.totalTime - this.elapsedSeconds);
+            const elapsed = Math.floor((Date.now() - this.startedAt.getTime()) / 1000);
 
-            // Check for alerts
+            // G10: the loop runs at refresh rate, but nothing here changes more
+            // than once a second. Bailing early keeps Alpine from re-rendering
+            // every countdown sixty times a second.
+            if (elapsed === this.lastTickSecond) return;
+            this.lastTickSecond = elapsed;
+
+            this.elapsedSeconds = elapsed;
+            this.remainingSeconds = Math.max(0, this.schedule.totalTime - elapsed);
+
             this.checkAlerts();
 
-            // Check for completion
-            if (this.elapsedSeconds >= this.schedule.totalTime) {
+            if (elapsed >= this.schedule.totalTime) {
                 this.complete();
             }
 
-            // Save periodically (every 5 seconds)
-            if (this.elapsedSeconds % 5 === 0) {
+            // G2: save every five seconds, once. The old modulo test was true
+            // for every frame of that whole second — roughly sixty writes.
+            if (elapsed % 5 === 0 && elapsed !== this.lastSavedSecond) {
+                this.lastSavedSecond = elapsed;
                 this.saveSession();
             }
         },
@@ -227,11 +233,21 @@ function timerApp() {
 
         // Alert management
         checkAlerts() {
-            for (const alert of this.alerts) {
-                if (!alert.triggered && this.elapsedSeconds >= alert.triggerTime) {
-                    this.triggerAlert(alert);
-                }
+            const { due, missed } = partitionDueAlerts(this.alerts, this.elapsedSeconds);
+            if (!due) return;
+
+            // G5: mark the backlog fired without announcing each one. Reopening
+            // a tab after the meal finished used to fire every outstanding alert
+            // in a single frame, one AudioContext apiece.
+            for (const alert of missed) {
+                alert.triggered = true;
             }
+            const summary = summariseMissed(missed);
+            if (summary) {
+                this.notify(summary, 'notice');
+            }
+
+            this.triggerAlert(due);
         },
 
         triggerAlert(alert) {
@@ -290,7 +306,6 @@ function timerApp() {
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification('Cooking Timer', {
                     body: alert.message,
-                    icon: 'static/images/timer-icon.png',
                     tag: 'cooking-timer',
                     requireInteraction: true
                 });
@@ -299,15 +314,14 @@ function timerApp() {
 
         // Persistence
         saveSession() {
-            const session = {
+            writeSession(localStorage, {
                 schedule: this.schedule,
                 status: this.status,
                 startedAt: this.startedAt ? this.startedAt.toISOString() : null,
                 pausedElapsed: this.pausedElapsed,
                 alerts: this.alerts,
                 selectedFoods: this.selectedFoods
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+            });
         },
 
         // Food status helpers
@@ -344,7 +358,7 @@ function timerApp() {
             // Check if food has already started cooking
             const scheduleItem = this.schedule.items.find(item => item.foodId === foodId);
             if (scheduleItem && !this.isWaiting(scheduleItem)) {
-                alert('Cannot change doneness for food that has already started cooking.');
+                this.notify('That dish has already started cooking, so its doneness is locked in.');
                 return;
             }
 
@@ -386,7 +400,7 @@ function timerApp() {
             // Check if food is already in the schedule
             const existingIndex = this.selectedFoods.findIndex(f => f.foodId === this.newFoodId);
             if (existingIndex !== -1) {
-                alert('This food is already in your cooking schedule.');
+                this.notify(`${foodData.name} is already on the menu.`);
                 return;
             }
 
@@ -407,33 +421,27 @@ function timerApp() {
 
         // T061: Remove a food during timer
         removeFood(foodId) {
-            // Check if food has already started cooking
             const scheduleItem = this.schedule.items.find(item => item.foodId === foodId);
             if (scheduleItem && !this.isWaiting(scheduleItem)) {
-                alert('Cannot remove food that has already started cooking.');
+                this.notify('That dish has already started cooking, so it cannot be removed.');
                 return;
             }
 
-            // Remove from selectedFoods
+            // G12: keep the actual selection so it can be restored verbatim,
+            // rather than rebuilding it from schedule fields via a scheduleItem
+            // that the guard above has already admitted might be missing.
+            const removed = this.selectedFoods.find(f => f.foodId === foodId);
+            if (!removed) return;
+
             this.selectedFoods = this.selectedFoods.filter(f => f.foodId !== foodId);
 
-            // Check if any foods remain
             if (this.selectedFoods.length === 0) {
-                alert('Cannot remove the last food. Use Reset to start over.');
-                // Re-add the food since we can't have empty schedule
-                const foodData = this.availableFoods.find(f => f.id === foodId);
-                if (foodData) {
-                    this.selectedFoods.push({
-                        foodId: foodId,
-                        foodName: foodData.name,
-                        doneness: scheduleItem.doneness,
-                        cookingTime: scheduleItem.duration
-                    });
-                }
+                // Put it back: an empty schedule has nothing to count down to.
+                this.selectedFoods = [removed];
+                this.notify('That is the only dish left. Use Reset to start over.');
                 return;
             }
 
-            // Recalculate schedule
             this.recalculateSchedulePreservingProgress();
         },
 
@@ -444,42 +452,13 @@ function timerApp() {
                 this.schedule.items,
                 this.elapsedSeconds,
             );
-            this.regenerateAlerts();
+            this.alerts = regenerateAlerts(this.schedule, this.alerts, this.elapsedSeconds);
             this.remainingSeconds = Math.max(0, this.schedule.totalTime - this.elapsedSeconds);
             this.saveSession();
         },
 
-        // Regenerate alerts, preserving triggered state for past events
-        regenerateAlerts() {
-            const newAlerts = [];
-
-            for (const item of this.schedule.items) {
-                // Check if there was already a triggered alert for this food
-                const existingAlert = this.alerts.find(
-                    a => a.type === 'food-start' && a.foodName === item.foodName
-                );
-
-                newAlerts.push({
-                    type: 'food-start',
-                    triggerTime: item.startTime,
-                    foodName: item.foodName,
-                    message: `Time to start cooking ${item.foodName}!`,
-                    triggered: existingAlert ? existingAlert.triggered : (this.elapsedSeconds >= item.startTime)
-                });
-            }
-
-            // Add completion alert
-            const existingDoneAlert = this.alerts.find(a => a.type === 'all-done');
-            newAlerts.push({
-                type: 'all-done',
-                triggerTime: this.schedule.totalTime,
-                foodName: '',
-                message: 'All done! Your meal is ready!',
-                triggered: existingDoneAlert ? existingDoneAlert.triggered : false
-            });
-
-            this.alerts = newAlerts;
-        }
+        // Food status helpers and formatting live above; alert generation and
+        // regeneration now live in ./core/alerts.js.
     };
 }
 

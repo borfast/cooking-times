@@ -26,6 +26,17 @@
         </header>
 
         <main class="layout layout--timer">
+            <div
+                x-show="message"
+                x-transition
+                class="inline-message"
+                :class="`inline-message--${messageTone}`"
+                role="status"
+            >
+                <span x-text="message"></span>
+                <button @click="dismissMessage()" class="btn btn-small">Dismiss</button>
+            </div>
+
             <!-- Main Timer Display -->
             <section class="timer-display panel">
                 <div class="countdown" :class="{ 'alert-flash': alertActive }">
