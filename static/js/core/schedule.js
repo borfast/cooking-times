@@ -4,8 +4,11 @@
  * Every time in this module is an integer number of seconds measured from
  * t=0, the moment cooking starts. Nothing here knows about wall-clock time.
  *
- * Schedule item shape: { foodId, foodName, doneness, startTime, duration, finishTime }
- * Selection shape:     { foodId, foodName, doneness, cookingTime }
+ * Schedule item shape: { itemId, foodId, foodName, optionLabel, startTime, duration, finishTime }
+ * Selection shape:     { itemId, foodId, foodName, optionId, optionLabel, cookingTime }
+ *
+ * `itemId` is the identity, never `foodId` — two portions of the same food at
+ * different options are a legitimate menu.
  *
  * Invariant, guaranteed for every item returned by every function here:
  *   finishTime - startTime === duration
@@ -29,9 +32,10 @@ export function calculateSchedule(selections) {
     const totalTime = Math.max(...selections.map((selection) => selection.cookingTime));
 
     const items = selections.map((selection) => ({
+        itemId: selection.itemId,
         foodId: selection.foodId,
         foodName: selection.foodName,
-        doneness: selection.doneness,
+        optionLabel: selection.optionLabel,
         startTime: totalTime - selection.cookingTime,
         duration: selection.cookingTime,
         finishTime: totalTime,
@@ -69,7 +73,7 @@ export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
     const waiting = [];
 
     for (const selection of selections) {
-        const inForce = current.find((item) => item.foodId === selection.foodId);
+        const inForce = current.find((item) => item.itemId === selection.itemId);
         if (inForce && elapsedSeconds >= inForce.startTime) {
             started.push({ selection, inForce });
         } else {
@@ -88,20 +92,22 @@ export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
 
     const items = [
         ...started.map(({ selection, inForce }) => ({
+            itemId: selection.itemId,
             foodId: selection.foodId,
             foodName: selection.foodName,
-            doneness: selection.doneness,
+            optionLabel: selection.optionLabel,
             startTime: inForce.startTime,
             // Derived from the timings actually in force rather than from the
             // selection's cookingTime, so the duration invariant holds even if
-            // a caller ever changes the doneness of an already-started dish.
+            // a caller ever changes the option of an already-started dish.
             duration: inForce.finishTime - inForce.startTime,
             finishTime: inForce.finishTime,
         })),
         ...waiting.map((selection) => ({
+            itemId: selection.itemId,
             foodId: selection.foodId,
             foodName: selection.foodName,
-            doneness: selection.doneness,
+            optionLabel: selection.optionLabel,
             // The clamp is currently unreachable: totalTime is at least
             // elapsedSeconds + slowest, and cookingTime <= slowest. Kept as a
             // guard because Phase 4 changes how totalTime is chosen.

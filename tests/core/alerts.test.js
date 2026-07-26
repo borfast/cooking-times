@@ -10,13 +10,18 @@ import {
 const schedule = {
   totalTime: 1500,
   items: [
-    { foodId: 'chicken', foodName: 'Chicken', startTime: 0, finishTime: 1500, duration: 1500 },
-    { foodId: 'kale', foodName: 'Kale', startTime: 1140, finishTime: 1500, duration: 360 },
+    { itemId: 'r0', foodId: 'chicken', foodName: 'Chicken', optionLabel: 'Cooked through', startTime: 0, finishTime: 1500, duration: 1500 },
+    { itemId: 'r1', foodId: 'kale', foodName: 'Kale', optionLabel: 'Tender', startTime: 1140, finishTime: 1500, duration: 360 },
   ],
 };
 
 test('generateAlerts emits one per dish plus a finale', () => {
   const alerts = generateAlerts(schedule);
+
+  assert.deepEqual(
+    alerts.filter((alert) => alert.type === 'food-start').map((alert) => alert.itemId),
+    ['r0', 'r1'],
+  );
 
   assert.equal(alerts.length, 3);
   assert.deepEqual(
@@ -59,7 +64,7 @@ test('regenerateAlerts marks a newly added dish as already fired if its start ha
     totalTime: 3000,
     items: [
       ...schedule.items,
-      { foodId: 'rice', foodName: 'Rice', startTime: 300, finishTime: 3000, duration: 2700 },
+      { itemId: 'r2', foodId: 'rice', foodName: 'Rice', optionLabel: 'Cooked', startTime: 300, finishTime: 3000, duration: 2700 },
     ],
   };
 
@@ -122,4 +127,44 @@ test('summariseMissed names the dishes it skipped', () => {
 
 test('summariseMissed returns null for an empty backlog', () => {
   assert.equal(summariseMissed([]), null);
+});
+
+test('regenerateAlerts distinguishes two dishes with the same name', () => {
+  const twoSteaks = {
+    totalTime: 600,
+    items: [
+      { itemId: 'a', foodId: 'beef-steak', foodName: 'Beef Steak', optionLabel: 'Well done', startTime: 0, finishTime: 600, duration: 600 },
+      { itemId: 'b', foodId: 'beef-steak', foodName: 'Beef Steak', optionLabel: 'Rare', startTime: 240, finishTime: 600, duration: 360 },
+    ],
+  };
+  const existing = generateAlerts(twoSteaks);
+  existing.find((alert) => alert.itemId === 'a').triggered = true;
+
+  const next = regenerateAlerts(twoSteaks, existing, 300);
+
+  // The old code matched on foodName, so the rare steak found the well-done
+  // steak's already-fired alert and inherited triggered: true — silencing an
+  // alert the cook still needed. Keyed on itemId it keeps its own state.
+  assert.equal(next.find((alert) => alert.itemId === 'a').triggered, true);
+  assert.equal(next.find((alert) => alert.itemId === 'b').triggered, false);
+  assert.equal(next.filter((alert) => alert.type === 'food-start').length, 2);
+});
+
+test('regenerateAlerts keeps a same-named waiting dish unfired', () => {
+  const twoSteaks = {
+    totalTime: 600,
+    items: [
+      { itemId: 'a', foodId: 'beef-steak', foodName: 'Beef Steak', optionLabel: 'Well done', startTime: 0, finishTime: 600, duration: 600 },
+      { itemId: 'b', foodId: 'beef-steak', foodName: 'Beef Steak', optionLabel: 'Rare', startTime: 240, finishTime: 600, duration: 360 },
+    ],
+  };
+  const existing = generateAlerts(twoSteaks);
+  existing.find((alert) => alert.itemId === 'a').triggered = true;
+
+  // At 100s the rare steak has not started, so its alert must stay unfired
+  // even though a dish with the identical name already fired.
+  const next = regenerateAlerts(twoSteaks, existing, 100);
+
+  assert.equal(next.find((alert) => alert.itemId === 'a').triggered, true);
+  assert.equal(next.find((alert) => alert.itemId === 'b').triggered, false);
 });

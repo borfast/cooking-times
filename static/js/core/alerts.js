@@ -9,6 +9,7 @@ export function generateAlerts(schedule) {
     const alerts = schedule.items.map((item) => ({
         type: 'food-start',
         triggerTime: item.startTime,
+        itemId: item.itemId,
         foodName: item.foodName,
         message: `Time to start cooking ${item.foodName}!`,
         triggered: false,
@@ -17,6 +18,7 @@ export function generateAlerts(schedule) {
     alerts.push({
         type: 'all-done',
         triggerTime: schedule.totalTime,
+        itemId: null,
         foodName: '',
         message: 'All done! Your meal is ready!',
         triggered: false,
@@ -31,17 +33,21 @@ export function generateAlerts(schedule) {
  *
  * A dish absent from `existingAlerts` is new. It counts as already fired if its
  * start is in the past, so adding a dish mid-cook does not immediately shout.
+ *
+ * Matching is on `itemId`, not `foodName`: two portions of the same food share a
+ * name, and matching on it silenced the second one.
  */
 export function regenerateAlerts(schedule, existingAlerts, elapsedSeconds) {
     const existing = existingAlerts || [];
 
     const alerts = schedule.items.map((item) => {
         const previous = existing.find(
-            (alert) => alert.type === 'food-start' && alert.foodName === item.foodName,
+            (alert) => alert.type === 'food-start' && alert.itemId === item.itemId,
         );
         return {
             type: 'food-start',
             triggerTime: item.startTime,
+            itemId: item.itemId,
             foodName: item.foodName,
             message: `Time to start cooking ${item.foodName}!`,
             triggered: previous ? previous.triggered : elapsedSeconds >= item.startTime,
@@ -52,6 +58,7 @@ export function regenerateAlerts(schedule, existingAlerts, elapsedSeconds) {
     alerts.push({
         type: 'all-done',
         triggerTime: schedule.totalTime,
+        itemId: null,
         foodName: '',
         message: 'All done! Your meal is ready!',
         triggered: previousFinale ? previousFinale.triggered : false,

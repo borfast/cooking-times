@@ -2,11 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calculateSchedule, recalculateSchedule } from '../../static/js/core/schedule.js';
 
-/** Build a selection. `foodName` mirrors `foodId` so assertions stay readable. */
-const sel = (foodId, cookingTime, doneness = 'medium') => ({
+/** Build a selection. Each row gets its own itemId, so two rows may share a food. */
+let nextItemId = 0;
+const sel = (foodId, cookingTime, optionLabel = 'Medium') => ({
+  itemId: `i${nextItemId++}`,
   foodId,
   foodName: foodId,
-  doneness,
+  optionId: optionLabel.toLowerCase().replace(/ /g, '-'),
+  optionLabel,
   cookingTime,
 });
 
@@ -26,9 +29,10 @@ test('a single dish starts at zero and sets the total', () => {
   assert.equal(result.totalTime, 360);
   assert.deepEqual(result.items, [
     {
+      itemId: result.items[0].itemId,
       foodId: 'kale',
       foodName: 'kale',
-      doneness: 'medium',
+      optionLabel: 'Medium',
       startTime: 0,
       duration: 360,
       finishTime: 360,
@@ -88,9 +92,9 @@ test('every item satisfies finishTime - startTime === duration', () => {
   }
 });
 
-test('doneness is carried through untouched', () => {
-  const result = calculateSchedule([sel('beef-steak', 360, 'rare')]);
-  assert.equal(result.items[0].doneness, 'rare');
+test('the option label is carried through untouched', () => {
+  const result = calculateSchedule([sel('beef-steak', 360, 'Rare')]);
+  assert.equal(result.items[0].optionLabel, 'Rare');
 });
 
 /** The state the timer is in before an edit: a plan, and time on the clock. */
@@ -146,14 +150,15 @@ test('a started dish keeps its timings when a waiting dish is removed', () => {
   const original = [sel('chicken', 1500), sel('kale', 360)];
   const current = inProgress(original);
 
-  const after = recalculateSchedule([sel('chicken', 1500)], current, 600);
+  const after = recalculateSchedule([original[0]], current, 600);
 
   assert.equal(after.totalTime, 1500);
   assert.deepEqual(after.items, [
     {
+      itemId: after.items[0].itemId,
       foodId: 'chicken',
       foodName: 'chicken',
-      doneness: 'medium',
+      optionLabel: 'Medium',
       startTime: 0,
       duration: 1500,
       finishTime: 1500,
@@ -165,9 +170,9 @@ test('shortening a waiting dish never pulls the finish earlier than a started di
   const original = [sel('chicken', 1500), sel('kale', 360)];
   const current = inProgress(original);
 
-  // Kale switched from medium (360) to rare (180) while still waiting.
+  // Kale switched from Tender (360) to Crisp-tender (180) while still waiting.
   const after = recalculateSchedule(
-    [sel('chicken', 1500), sel('kale', 180, 'rare')],
+    [original[0], { ...original[1], cookingTime: 180, optionLabel: 'Crisp-tender' }],
     current,
     600,
   );
@@ -175,7 +180,7 @@ test('shortening a waiting dish never pulls the finish earlier than a started di
   assert.equal(after.totalTime, 1500);
   const kale = after.items.find((item) => item.foodId === 'kale');
   assert.equal(kale.startTime, 1320);
-  assert.equal(kale.doneness, 'rare');
+  assert.equal(kale.optionLabel, 'Crisp-tender');
   assert.equal(kale.duration, 180);
 });
 
@@ -191,7 +196,7 @@ test('no dish is ever scheduled to start in the past', () => {
     );
     for (const item of after.items) {
       const wasStarted = current.some(
-        (existing) => existing.foodId === item.foodId && elapsed >= existing.startTime,
+        (existing) => existing.itemId === item.itemId && elapsed >= existing.startTime,
       );
       if (!wasStarted) {
         assert.ok(
@@ -224,4 +229,36 @@ test('a dish absent from the current plan is treated as not yet started', () => 
 
   assert.equal(after.totalTime, 700);
   assert.equal(after.items[0].startTime, 100);
+});
+
+test('two portions of the same food are scheduled independently', () => {
+  const rare = sel('beef-steak', 360, 'Rare');
+  const well = sel('beef-steak', 600, 'Well done');
+
+  const result = calculateSchedule([rare, well]);
+
+  assert.equal(result.totalTime, 600);
+  assert.equal(result.items.length, 2);
+  assert.deepEqual(
+    result.items.map((item) => [item.itemId, item.startTime]),
+    [
+      [well.itemId, 0],
+      [rare.itemId, 240],
+    ],
+  );
+});
+
+test('recalculateSchedule distinguishes two portions of the same food', () => {
+  const rare = sel('beef-steak', 360, 'Rare');
+  const well = sel('beef-steak', 600, 'Well done');
+  const current = calculateSchedule([rare, well]).items;
+
+  // At 300s the well-done steak has started; the rare one has not.
+  const after = recalculateSchedule([rare, well], current, 300);
+
+  const wellAfter = after.items.find((item) => item.itemId === well.itemId);
+  const rareAfter = after.items.find((item) => item.itemId === rare.itemId);
+  assert.equal(wellAfter.startTime, 0);
+  assert.equal(rareAfter.startTime, 240);
+  assert.equal(after.totalTime, 600);
 });
