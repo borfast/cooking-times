@@ -1,4 +1,5 @@
-// T043-T050: Timer state management with AlpineJS
+import { calculateSchedule, recalculateSchedule } from './core/schedule.js';
+import { formatTime as formatDuration } from './core/format.js';
 
 const STORAGE_KEY = 'cooking-timer-session';
 
@@ -79,7 +80,7 @@ function timerApp() {
                 try {
                     const data = JSON.parse(scheduleData);
                     this.selectedFoods = data.selectedFoods || [];
-                    this.schedule = this.calculateSchedule(this.selectedFoods);
+                    this.schedule = calculateSchedule(this.selectedFoods);
                     this.alerts = this.generateAlerts();
                     this.remainingSeconds = this.schedule.totalTime;
                 } catch (e) {
@@ -113,30 +114,6 @@ function timerApp() {
             } else {
                 this.remainingSeconds = this.schedule.totalTime;
             }
-        },
-
-        // Calculate schedule (same as planning page)
-        calculateSchedule(foods) {
-            if (!foods || foods.length === 0) {
-                return { items: [], totalTime: 0 };
-            }
-
-            const maxTime = Math.max(...foods.map(f => f.cookingTime));
-            const items = foods.map(food => ({
-                foodId: food.foodId,
-                foodName: food.foodName,
-                doneness: food.doneness,
-                startTime: maxTime - food.cookingTime,
-                duration: food.cookingTime,
-                finishTime: maxTime
-            }));
-
-            items.sort((a, b) => a.startTime - b.startTime);
-
-            return {
-                items,
-                totalTime: maxTime
-            };
         },
 
         // Generate alerts from schedule
@@ -346,12 +323,9 @@ function timerApp() {
             return this.elapsedSeconds >= item.finishTime;
         },
 
-        // Time formatting
+        // Time formatting — delegates to the shared core module.
         formatTime(seconds) {
-            if (seconds < 0) seconds = 0;
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
+            return formatDuration(seconds);
         },
 
         // T059-T062: Edit functions for User Story 3
@@ -463,93 +437,15 @@ function timerApp() {
             this.recalculateSchedulePreservingProgress();
         },
 
-        // T057/T060: Recalculate schedule while preserving progress for already-started foods
+        // Re-plan around dishes already on the heat, then fan out the effects.
         recalculateSchedulePreservingProgress() {
-            // Identify foods that have already started (their elapsed time is locked)
-            const startedFoods = [];
-            const notStartedFoods = [];
-
-            for (const food of this.selectedFoods) {
-                const scheduleItem = this.schedule.items.find(item => item.foodId === food.foodId);
-                if (scheduleItem && !this.isWaiting(scheduleItem)) {
-                    // Food has started - preserve its original timing relative to elapsed
-                    startedFoods.push({
-                        ...food,
-                        locked: true,
-                        originalStartTime: scheduleItem.startTime,
-                        originalFinishTime: scheduleItem.finishTime
-                    });
-                } else {
-                    notStartedFoods.push(food);
-                }
-            }
-
-            // Calculate new schedule for not-started foods
-            // Find the finish time - either the max of started foods' original finish times
-            // or recalculated based on not-started foods
-            let requiredFinishTime = 0;
-
-            // Started foods have fixed finish times relative to when they started
-            for (const food of startedFoods) {
-                if (food.originalFinishTime > requiredFinishTime) {
-                    requiredFinishTime = food.originalFinishTime;
-                }
-            }
-
-            // Calculate what finish time would be needed for not-started foods
-            // They should all finish at the same time as the longest-cooking item
-            if (notStartedFoods.length > 0) {
-                const maxNotStartedTime = Math.max(...notStartedFoods.map(f => f.cookingTime));
-                const notStartedFinishTime = this.elapsedSeconds + maxNotStartedTime;
-
-                // Use the later of the two finish times
-                requiredFinishTime = Math.max(requiredFinishTime, notStartedFinishTime);
-            }
-
-            // Build new schedule items
-            const newItems = [];
-
-            // Add started foods with their original timing
-            for (const food of startedFoods) {
-                newItems.push({
-                    foodId: food.foodId,
-                    foodName: food.foodName,
-                    doneness: food.doneness,
-                    startTime: food.originalStartTime,
-                    duration: food.cookingTime,
-                    finishTime: food.originalFinishTime
-                });
-            }
-
-            // Add not-started foods - they start so they finish at requiredFinishTime
-            for (const food of notStartedFoods) {
-                const startTime = requiredFinishTime - food.cookingTime;
-                newItems.push({
-                    foodId: food.foodId,
-                    foodName: food.foodName,
-                    doneness: food.doneness,
-                    startTime: Math.max(startTime, this.elapsedSeconds), // Can't start in the past
-                    duration: food.cookingTime,
-                    finishTime: requiredFinishTime
-                });
-            }
-
-            // Sort by start time
-            newItems.sort((a, b) => a.startTime - b.startTime);
-
-            // Update schedule
-            this.schedule = {
-                items: newItems,
-                totalTime: requiredFinishTime
-            };
-
-            // Regenerate alerts for items not yet triggered
+            this.schedule = recalculateSchedule(
+                this.selectedFoods,
+                this.schedule.items,
+                this.elapsedSeconds,
+            );
             this.regenerateAlerts();
-
-            // Update remaining time
             this.remainingSeconds = Math.max(0, this.schedule.totalTime - this.elapsedSeconds);
-
-            // T062: Save to localStorage
             this.saveSession();
         },
 
@@ -586,3 +482,13 @@ function timerApp() {
         }
     };
 }
+
+// A module's top-level bindings are not global, so `x-data="timerApp()"` cannot
+// see the factory without this assignment.
+//
+// This module MUST execute before Alpine's script. Alpine's CDN build calls
+// Alpine.start() as soon as it runs — which both walks the DOM and fires
+// `alpine:init` — so registering on that event from here would always be too
+// late. Deferred scripts execute in document order, so timer.html loads this
+// module ahead of the Alpine tag in <head>. Do not move either tag.
+window.timerApp = timerApp;
