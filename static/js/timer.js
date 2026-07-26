@@ -46,7 +46,7 @@ function timerApp() {
         // G15: a propped-up phone sleeps, taking the display with it.
         wakeLock: createWakeLock(navigator),
 
-        // T059-T062: State for editing during timer
+        // Editing the menu mid-cook.
         availableFoods: [],
         selectedFoods: [], // Track original selected foods for recalculation
         addingFood: false,
@@ -72,7 +72,7 @@ function timerApp() {
 
         // Initialize
         async init() {
-            // Load available foods from API for add food functionality
+            // The catalogue, so dishes can be added mid-cook.
             await this.loadAvailableFoods();
 
             const session = readSession(localStorage);
@@ -97,7 +97,7 @@ function timerApp() {
             });
         },
 
-        // T059: Load available foods from API
+        /** The bundled catalogue plus the user's own foods. */
         async loadAvailableFoods() {
             try {
                 const response = await fetch('static/foods.json');
@@ -431,7 +431,7 @@ function timerApp() {
             return formatDuration(seconds);
         },
 
-        // T059-T062: Edit functions for User Story 3
+        // Mid-cook edits. Only a dish that has not started may be changed.
 
         // Check if editing is allowed (timer running or paused, not completed)
         canEdit() {
@@ -484,7 +484,7 @@ function timerApp() {
             return food ? food.options : [];
         },
 
-        // T061: Add a new food during timer
+        // Add a dish while the timer is running.
         startAddingFood() {
             this.addingFood = true;
             this.newFoodId = '';

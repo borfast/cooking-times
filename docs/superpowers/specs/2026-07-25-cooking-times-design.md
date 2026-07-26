@@ -193,14 +193,12 @@ The stylesheet is essentially complete against the markup: of the classes the tw
 
 ### 3.4 Vestiges of the previous architecture
 
-The app was a Go backend serving these pages until commit `e7b13f0` ("Refactor to static-only application"), which is the initial commit of the current history — the Go code is not in this repository. Traces remain:
+The app was a Go backend serving these pages until commit `e7b13f0` ("Refactor to static-only application"), which is the initial commit of the current history — the Go code is not in this repository. Traces remained for a long time afterwards and are now cleared:
 
-- `CLAUDE.md` states the stack as "Go 1.25+ (backend)" and documents a `src/` and `tests/` layout. Neither directory exists.
-- `.gitignore` is Go-oriented: `server`, `vendor/`, `*.exe`, `*.so`.
-- Comments read "Load foods from API" and "Calculate schedule (same algorithm as backend)".
-- Both JS files carry task markers (`T029-T031`, `T043-T050`, `T059-T062`) from a spec-driven workflow whose spec files are not in the repository or its history.
-
----
+- `CLAUDE.md` stated the stack as "Go 1.25+ (backend)" and documented a `src/` and `tests/` layout that never existed here. *Rewritten to describe the app as it is.*
+- `.gitignore` was Go-oriented: `server`, `vendor/`, `*.exe`, `*.so`. *Removed — and the `vendor/` line was not merely untidy. Without a leading slash it matched at any depth, so `static/vendor/` was silently excluded and the vendored Alpine and fonts were never committed. A clean checkout would not have booted the timer page at all. Caught only by cloning the repository fresh and loading it; the offline verification had passed because the files were present on local disk.*
+- Comments read "Load foods from API" and "Calculate schedule (same algorithm as backend)". *Replaced.*
+- Both JS files carried task markers (`T029-T031`, `T043-T050`, `T059-T062`) from a spec-driven workflow whose spec files are not in the repository or its history. *Removed.*
 
 ## 4. Gaps register
 
@@ -300,4 +298,4 @@ Thirty entries. Categories present: Vegetables (13), Meat (6), Fish (5), Grains 
 
 ## Appendix B — Documents that contradict the code
 
-`CLAUDE.md` at the repository root describes a Go 1.25+ backend and a `src/`/`tests/` project layout, neither of which exists. It is stale as of the static-only refactor and will mislead anyone — human or AI — who reads it before reading the code.
+*Resolved.* `CLAUDE.md` described a Go backend and a `src/`/`tests/` layout, neither of which existed. It now documents the actual stack, structure and commands, along with the three traps that unit tests do not catch: the Alpine load order, the service-worker shell list, and the need to verify in a browser.
