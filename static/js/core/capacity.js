@@ -141,3 +141,177 @@ export function describeConflicts(conflicts, items) {
 
     return lines;
 }
+
+/**
+ * Would placing `candidate` at `start` be achievable along`placed`?
+ *
+ * Achievable means the concurrency cap holds across the whole cook window, and
+ * no already-placed dish starts within the transition time.
+ */
+function fits(candidate, start, placed, capacity, transitionSeconds) {
+    const heatOff = start + candidate.cookDuration;
+
+    if (transitionSeconds > 0) {
+        for (const other of placed) {
+            if (Math.abs(other.startTime - start) < transitionSeconds) {
+                return false;
+            }
+        }
+    }
+
+    // Check the cap at every boundary inside the proposed window. Concurrency
+    // only ever rises at a start, so those are the only points that matter.
+    const probes = [start, ...placed.map((other) => other.startTime).filter(
+        (time) => time > start && time < heatOff,
+    )];
+
+    for (const probe of probes) {
+        const overlapping = placed.filter(
+            (other) => other.startTime <= probe && other.heatOffTime > probe,
+        ).length;
+        if (overlapping + 1 > capacity) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/** Reposition an item to a new start, keeping both phase invariants intact. */
+function movedTo(item, start) {
+    return {
+        ...item,
+        startTime: start,
+        heatOffTime: start + item.cookDuration,
+        finishTime: start + item.cookDuration + item.restSeconds,
+    };
+}
+
+/**
+ * Candidate start times for a dish, drawn from the constraint boundaries rather
+ * than a fixed step.
+ *
+ * A placement only becomes achievable at a boundary: when a ring frees up, when
+ * this dish would finish exactly as another starts, or at one transition time
+ * either side of an existing start. Stepping by a fixed interval both misses
+ * valid placements between steps and wastes work scanning times that cannot
+ * change the answer.
+ */
+function candidateStarts(item, ideal, placed, transitionSeconds) {
+    const candidates = new Set([ideal, 0]);
+
+    for (const other of placed) {
+        candidates.add(other.heatOffTime);
+        candidates.add(other.startTime - item.cookDuration);
+        if (transitionSeconds > 0) {
+            candidates.add(other.startTime + transitionSeconds);
+            candidates.add(other.startTime - transitionSeconds);
+        }
+    }
+
+    return [...candidates];
+}
+
+/**
+ * Greedy placement in one direction.
+ *
+ * Dishes are placed longest-cook-first, since the long ones have the least room
+ * to move. Each takes the achievable start nearest its ideal, searching only in
+ * `direction` (-1 earlier for stagger, +1 later for extend).
+ *
+ * This is a heuristic, not an optimum — minimising deviation from a common finish
+ * under a concurrency cap is a bin-packing problem, and a greedy pass can leave a
+ * resolvable conflict unresolved. When no achievable start exists, the dish keeps
+ * its ideal start and the residue is reported by `findConflicts`. An honest
+ * conflict beats a silently mangled schedule.
+ *
+ * The two directions are not equally powerful, and that asymmetry is worth
+ * knowing: nothing can start before t=0, so `stagger` has finite room and is
+ * best-effort — with dishes of identical length, all already starting at 0, it
+ * can do nothing at all. `extend` always has room later, so it always resolves.
+ */
+function placeGreedily(items, capacity, transitionSeconds, direction) {
+    const order = [...items].sort((a, b) => b.cookDuration - a.cookDuration);
+    const placed = [];
+    const moved = [];
+
+    for (const item of order) {
+        const ideal = item.startTime;
+
+        const reachable = candidateStarts(item, ideal, placed, transitionSeconds)
+            .filter((start) => start >= 0)
+            .filter((start) => (direction < 0 ? start <= ideal : start >= ideal))
+            .sort((a, b) => Math.abs(a - ideal) - Math.abs(b - ideal));
+
+        const chosen = reachable.find(
+            (start) => fits(item, start, placed, capacity, transitionSeconds),
+        );
+
+        const start = chosen === undefined ? ideal : chosen;
+        placed.push(movedTo(item, start));
+
+        if (start !== ideal) {
+            const shift = start - ideal;
+            moved.push({
+                itemId: item.itemId,
+                fromStart: ideal,
+                toStart: start,
+                ...(shift < 0 ? { finishesEarlyBy: -shift } : { finishesLateBy: shift }),
+            });
+        }
+    }
+
+    placed.sort((a, b) => a.startTime - b.startTime);
+    return { items: placed, moved };
+}
+
+/**
+ * Resolve capacity and transition conflicts according to the chosen strategy.
+ *
+ * `warn` reports and changes nothing. `stagger` moves conflicting dishes earlier,
+ * so they finish before the meal and keep warm — the food waits. `extend` moves
+ * them later, so the meal is ready later — you wait. Both desynchronise the
+ * finish, because as the module header explains, nothing else can.
+ *
+ * An unrecognised strategy is treated as `warn`.
+ */
+export function applyStrategy(items, settings) {
+    const source = items || [];
+    const capacity = settings.capacity;
+    const transitionSeconds = settings.transitionSeconds || 0;
+    const strategy = settings.strategy;
+
+    const totalOf = (list) => list.reduce((latest, item) => Math.max(latest, item.finishTime), 0);
+
+    const unchanged = () => ({
+        items: source,
+        totalTime: totalOf(source),
+        conflicts: findConflicts(source, settings),
+        strategy: 'warn',
+        moved: [],
+    });
+
+    if (strategy !== 'stagger' && strategy !== 'extend') {
+        return unchanged();
+    }
+
+    const conflicts = findConflicts(source, settings);
+    if (conflicts.overCapacity.length === 0 && conflicts.tightStarts.length === 0) {
+        return { ...unchanged(), strategy };
+    }
+
+    const { items: placed, moved } = placeGreedily(
+        source,
+        capacity,
+        transitionSeconds,
+        strategy === 'stagger' ? -1 : 1,
+    );
+
+    return {
+        items: placed,
+        totalTime: totalOf(placed),
+        conflicts: findConflicts(placed, settings),
+        strategy,
+        moved,
+    };
+}
