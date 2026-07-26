@@ -1,7 +1,7 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap");
+@import url("../vendor/fonts.css");
 
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
     --font-display: "Fraunces", "Playfair Display", "Georgia", serif;
     --font-sans: "Manrope", "Figtree", "Noto Sans", sans-serif;
     --color-ink: #15161a;
@@ -36,8 +36,16 @@ body {
     line-height: 1.6;
     color: var(--color-ink);
     background:
-        radial-gradient(1100px circle at 12% -10%, rgba(255, 107, 74, 0.24), transparent 52%),
-        radial-gradient(900px circle at 90% 0%, rgba(43, 182, 115, 0.18), transparent 48%),
+        radial-gradient(
+            1100px circle at 12% -10%,
+            rgba(255, 107, 74, 0.24),
+            transparent 52%
+        ),
+        radial-gradient(
+            900px circle at 90% 0%,
+            rgba(43, 182, 115, 0.18),
+            transparent 48%
+        ),
         linear-gradient(180deg, #f8f5f1 0%, #f1efe9 45%, #f4f7fb 100%);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -69,7 +77,11 @@ body {
     width: 3rem;
     height: 3rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(255, 107, 74, 0.95), rgba(244, 169, 51, 0.9));
+    background: linear-gradient(
+        135deg,
+        rgba(255, 107, 74, 0.95),
+        rgba(244, 169, 51, 0.9)
+    );
     color: #fff;
     font-size: 1.5rem;
     box-shadow: 0 16px 30px -18px rgba(255, 107, 74, 0.8);
@@ -172,7 +184,7 @@ h2 {
 
 .food-item {
     display: grid;
-    grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 0.8fr) auto;
+    grid-template-columns: minmax(160px, 1.1fr) minmax(130px, 0.7fr) auto auto;
     gap: 1rem;
     align-items: center;
     padding: 1rem;
@@ -208,7 +220,11 @@ h2 {
     bottom: 1rem;
     width: 3px;
     border-radius: 999px;
-    background: linear-gradient(180deg, var(--color-primary), rgba(255, 107, 74, 0.2));
+    background: linear-gradient(
+        180deg,
+        var(--color-primary),
+        rgba(255, 107, 74, 0.2)
+    );
 }
 
 .schedule-item strong {
@@ -249,10 +265,16 @@ select {
     background-image:
         linear-gradient(45deg, transparent 50%, rgba(15, 23, 42, 0.55) 50%),
         linear-gradient(135deg, rgba(15, 23, 42, 0.55) 50%, transparent 50%);
-    background-position: calc(100% - 1.1rem) 1.1rem, calc(100% - 0.85rem) 1.1rem;
-    background-size: 6px 6px, 6px 6px;
+    background-position:
+        calc(100% - 1.1rem) 1.1rem,
+        calc(100% - 0.85rem) 1.1rem;
+    background-size:
+        6px 6px,
+        6px 6px;
     background-repeat: no-repeat;
-    transition: border-color var(--transition), box-shadow var(--transition);
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
 }
 
 select:focus-visible,
@@ -272,7 +294,10 @@ a:focus-visible {
     justify-content: center;
     gap: 0.35rem;
     text-decoration: none;
-    transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
     box-shadow: 0 12px 22px -18px rgba(15, 23, 42, 0.45);
 }
 
@@ -294,7 +319,11 @@ a:focus-visible {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+    background: linear-gradient(
+        135deg,
+        var(--color-primary),
+        var(--color-primary-strong)
+    );
     color: #fff;
 }
 
@@ -334,6 +363,9 @@ a:focus-visible {
     font-size: 0.85rem;
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: predates the remediation and
+   renders correctly; reordering risks a visual regression for no behavioural
+   gain. */
 .btn-icon {
     width: 2.4rem;
     height: 2.4rem;
@@ -349,7 +381,12 @@ a:focus-visible {
 .countdown {
     padding: clamp(1.2rem, 3vw, 2rem);
     border-radius: var(--radius-lg);
-    background: radial-gradient(circle at top, rgba(255, 255, 255, 0.25), transparent 55%),
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(255, 255, 255, 0.25),
+            transparent 55%
+        ),
         linear-gradient(135deg, #ff6b4a, #f4a933);
     color: #fff;
     margin-bottom: 1.75rem;
@@ -363,8 +400,13 @@ a:focus-visible {
 }
 
 @keyframes flash {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.75; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.75;
+    }
 }
 
 .time-remaining {
@@ -451,7 +493,9 @@ a:focus-visible {
     border-radius: var(--radius-md);
     border: 1px solid rgba(15, 23, 42, 0.08);
     box-shadow: var(--shadow-soft);
-    transition: transform var(--transition), box-shadow var(--transition);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition);
 }
 
 .food-timer-item.waiting {
@@ -527,8 +571,15 @@ a:focus-visible {
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.25); opacity: 0.7; }
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 0.7;
+    }
 }
 
 .food-actions {
@@ -537,7 +588,7 @@ a:focus-visible {
     gap: 0.5rem;
 }
 
-.doneness-edit-select {
+.option-edit-select {
     padding: 0.5rem 2.2rem 0.5rem 0.75rem;
     font-size: 0.9rem;
     border: 1px solid rgba(15, 23, 42, 0.18);
@@ -568,7 +619,7 @@ a:focus-visible {
     flex: 2 1 160px;
 }
 
-.add-food-form .doneness-select {
+.add-food-form .option-select {
     flex: 1 1 110px;
 }
 
@@ -590,8 +641,14 @@ a:focus-visible {
 }
 
 @keyframes rise {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media (max-width: 900px) {
@@ -641,9 +698,208 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    /* biome-ignore-start lint/complexity/noImportantStyles: honouring a user's
+       motion preference must not be overridable by a component's own rules. */
     * {
         animation: none !important;
         transition: none !important;
         scroll-behavior: auto !important;
+    }
+    /* biome-ignore-end lint/complexity/noImportantStyles: end of the block. */
+}
+
+/* G8: inline messaging, replacing blocking alert() dialogs. */
+.inline-message {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-panel);
+    box-shadow: var(--shadow-soft);
+    font-weight: 500;
+}
+
+.inline-message[hidden] {
+    display: none;
+}
+
+.inline-message--error {
+    border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+    color: var(--color-danger);
+}
+
+.inline-message--notice {
+    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    color: var(--color-primary-strong);
+}
+
+/* Spec §3.3 found these two referenced by timer.html with no rule at all. */
+.app-header--timer {
+    margin-bottom: clamp(1rem, 2.5vw, 2rem);
+}
+
+.time-elapsed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--color-muted);
+}
+
+/* G19: dark mode. Only the custom properties and the page backdrop change —
+   every component reads its colours from these. */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-ink: #f2f3f5;
+        --color-muted: #a3abb8;
+        --color-primary: #ff8163;
+        --color-primary-strong: #ff9a80;
+        --color-success: #3ecf8e;
+        --color-warning: #f7b955;
+        --color-danger: #ff6369;
+        --color-border: rgba(226, 232, 240, 0.16);
+        --color-panel: rgba(24, 26, 32, 0.92);
+        --color-panel-strong: #1c1f26;
+        --shadow-card: 0 24px 60px -40px rgba(0, 0, 0, 0.9);
+        --shadow-soft: 0 12px 30px -24px rgba(0, 0, 0, 0.85);
+    }
+
+    body {
+        background:
+            radial-gradient(
+                1100px circle at 12% -10%,
+                rgba(255, 129, 99, 0.18),
+                transparent 52%
+            ),
+            radial-gradient(
+                900px circle at 90% 0%,
+                rgba(62, 207, 142, 0.14),
+                transparent 48%
+            ),
+            linear-gradient(180deg, #12141a 0%, #14161d 45%, #11141b 100%);
+    }
+}
+
+/* G23/G24: per-dish time correction, remembered per food and option. */
+.time-override {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.time-override-input {
+    width: 4.5rem;
+    text-align: right;
+}
+
+.time-override-unit {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.time-override-reset {
+    border: none;
+    background: transparent;
+    color: var(--color-primary-strong);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0.2rem;
+    border-radius: var(--radius-sm);
+}
+
+.time-override-reset[hidden] {
+    display: none;
+}
+
+.food-item--overridden {
+    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+
+/* G24: user-defined foods. */
+.custom-food {
+    margin-top: 1rem;
+}
+
+.custom-food > summary {
+    cursor: pointer;
+    color: var(--color-muted);
+    font-weight: 600;
+    padding: 0.35rem 0;
+}
+
+.custom-food-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    margin-top: 0.5rem;
+    background: var(--color-panel);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--color-border);
+}
+
+.custom-food-form input[type="text"] {
+    flex: 2 1 160px;
+}
+
+.custom-food-form input[type="number"] {
+    flex: 0 0 5.5rem;
+}
+
+@media (max-width: 700px) {
+    .time-override {
+        justify-content: flex-start;
+    }
+
+    .custom-food-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* G26: taking the plan away from the screen. */
+.runsheet-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.runsheet-actions label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-muted);
+}
+
+@media print {
+    .custom-food,
+    .food-selector,
+    .runsheet-actions,
+    .header-actions,
+    .inline-message,
+    #add-food-btn,
+    #start-timer-btn {
+        display: none;
+    }
+
+    body {
+        background: #fff;
+        color: #000;
+    }
+
+    .panel {
+        box-shadow: none;
+        border: 1px solid #999;
     }
 }

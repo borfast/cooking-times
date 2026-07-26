@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cooking Timer - Plan Your Meal</title>
     <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#ff6b4a">
+    <link rel="icon" href="static/icons/icon-192.png" type="image/png">
 </head>
 <body>
     <div class="container">
@@ -22,6 +25,8 @@
         </header>
 
         <main class="layout">
+            <div id="planning-message" class="inline-message" role="status" hidden></div>
+
             <section class="food-selector panel">
                 <div class="section-head">
                     <div>
@@ -30,7 +35,23 @@
                     </div>
                 </div>
                 <div id="food-list" class="stack"></div>
-                <button id="add-food-btn" class="btn btn-primary btn-cta">+ Add Food</button>
+                <button type="button" id="add-food-btn" class="btn btn-primary btn-cta">+ Add Food</button>
+
+                <details class="custom-food">
+                    <summary>Add your own food</summary>
+                    <div class="custom-food-form">
+                        <input id="custom-food-name" type="text" placeholder="e.g. My roast chicken" aria-label="Food name">
+                        <input id="custom-food-minutes" type="number" min="1" max="600" placeholder="min" aria-label="Cooking time in minutes">
+                        <select id="custom-food-category" aria-label="Category">
+                            <option value="Meat">Meat</option>
+                            <option value="Fish">Fish</option>
+                            <option value="Vegetables">Vegetables</option>
+                            <option value="Grains">Grains</option>
+                            <option value="Other" selected>Other</option>
+                        </select>
+                        <button id="custom-food-add" type="button" class="btn btn-success">Add</button>
+                    </div>
+                </details>
             </section>
 
             <section class="schedule-display panel" id="schedule-section" style="display: none;">
@@ -41,11 +62,36 @@
                     </div>
                 </div>
                 <div id="schedule-output" class="schedule-list"></div>
-                <button id="start-timer-btn" class="btn btn-success btn-cta">Start Timer</button>
+
+                <div class="runsheet-actions">
+                    <label>
+                        <span>Serve at</span>
+                        <input id="serve-at" type="time">
+                    </label>
+                    <button id="copy-runsheet" type="button" class="btn btn-secondary">
+                        Copy running order
+                    </button>
+                    <button id="print-runsheet" type="button" class="btn btn-secondary">
+                        Print
+                    </button>
+                </div>
+
+                <button type="button" id="start-timer-btn" class="btn btn-success btn-cta">Start Timer</button>
             </section>
         </main>
     </div>
 
-    <script src="static/js/schedule.js"></script>
+    <script type="module" src="static/js/planning.js"></script>
+    <script>
+        // G16: register the offline cache. Guarded, because the app must still
+        // work in browsers without service workers -- just not offline.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((error) => {
+                    console.warn('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

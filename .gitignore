@@ -1,15 +1,5 @@
-# Binaries
-server
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-
-# Go
-vendor/
+# Node
+node_modules/
 
 # IDEs
 .DS_Store
@@ -26,3 +16,6 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Tooling output
+.playwright-mcp/
