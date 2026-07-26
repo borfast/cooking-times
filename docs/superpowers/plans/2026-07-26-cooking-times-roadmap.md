@@ -38,16 +38,21 @@ The scheduling rule and the mid-cook recalculation become pure, importable, test
 ### Phase 2 — Defect fixes ✅
 **Plan:** `2026-07-26-phase-2-defect-fixes.md`
 **Closes:** G1, G2, G3, G4, G5, G6, G7, G8, G9, G10, G12, G19
-**Ships:** The same feature set with its twelve defects gone — replanning works, `localStorage` is written once per five seconds, duplicate foods are rejected at planning time, missed alerts are summarised rather than shouted, errors are inline instead of modal, and the app has a dark mode.
+**Ships:** The same feature set with its twelve defects gone — replanning works, `localStorage` is written once per five seconds, missed alerts are summarised rather than shouted, errors are inline instead of modal, and the app has a dark mode. Duplicate foods were rejected here as a stopgap; Phase 3 replaced that with per-row identity.
 
 G19 (dark mode) is folded in here rather than into Phase 5 because it is pure CSS and touches nothing the later phases restructure.
 
 ### Phase 3 — Data model ✅
 **Plan:** `2026-07-26-phase-3-data-model.md`
 **Closes:** G21, G22, G23, G24
-**Ships:** Per-food cooking option sets (D1), quantity and method as time modifiers, and user-defined foods persisted locally. Includes a migration for plans saved under the old three-tier schema.
+**Ships:** Per-food cooking option sets (D1), per-row `itemId` identity (D6), per-dish time overrides, and user-defined foods persisted locally. No migration, per D7.
 
-Also carries a debt from Phase 2: duplicate dishes are currently *rejected* at planning time, which matches what the timer already enforced but blocks a real use case — two steaks at different doneness. The proper fix is to give each row its own identity instead of keying on `foodId`, which changes the schedule item shape, so it belongs with this phase's schema change. Doing so also fixes the Alpine `x-for` key collision noted in G3.
+**Two deviations from the original description, both deliberate:**
+
+- *Quantity and method as time modifiers* became a **per-dish time override**, remembered per food-and-option. Modelling quantity, thickness and method properly needs a thermal model; modelling them improperly means inventing coefficients and presenting fiction as arithmetic. The override lets the cook correct the number instead, which is also what G24 concretely asked for. G23 is therefore marked *partly* closed, not closed.
+- *A migration for old saved plans* was dropped after the user confirmed the tool has no users yet (D7).
+
+Repaid Phase 2's duplicate-rejection debt via D6. That also fixed a latent bug the register had missed: alert regeneration matched on `foodName`, so two portions of one food shared an alert and firing the first silenced the second.
 
 ### Phase 4 — Scheduling engine
 **Plan:** to be written on completion of Phase 3.
@@ -67,7 +72,7 @@ Every gap in the spec maps to exactly one phase:
 | --- | --- | --- |
 | 1 | G11, G20 | 2 |
 | 2 | G1–G10, G12, G19 | 12 |
-| 3 | G21–G24 | 4 |
+| 3 | G21, G22, G24 closed; G23 partly; G3 debt repaid | 4 |
 | 4 | G13, G14, G25 | 3 |
 | 5 | G15–G18, G26 | 5 |
 | **Total** | | **26** |
