@@ -12,6 +12,7 @@
 </head>
 <body>
     <div class="container" x-data="timerApp()" x-init="init()">
+        <div class="visually-hidden" aria-live="polite" aria-atomic="true" x-text="announcement"></div>
         <header class="app-header app-header--timer">
             <div class="brand">
                 <span class="brand-mark">🍳</span>
@@ -42,11 +43,13 @@
                 <div class="countdown" :class="{ 'alert-flash': alertActive }">
                     <div class="time-remaining">
                         <span class="time-label">Time Remaining</span>
-                        <span class="time-value" x-text="formatTime(remainingSeconds)"></span>
+                        <span class="time-value" aria-hidden="true" x-text="formatTime(remainingSeconds)"></span>
+                        <span class="visually-hidden" x-text="`${formatTime(remainingSeconds)} remaining`"></span>
                     </div>
                     <div class="time-elapsed">
                         <span class="time-label">Elapsed</span>
-                        <span class="time-value-small" x-text="formatTime(elapsedSeconds)"></span>
+                        <span class="time-value-small" aria-hidden="true" x-text="formatTime(elapsedSeconds)"></span>
+                        <span class="visually-hidden" x-text="`${formatTime(elapsedSeconds)} elapsed`"></span>
                     </div>
                 </div>
 
@@ -80,7 +83,14 @@
             </section>
 
             <!-- Alert Notification -->
-            <div x-show="currentAlert" x-transition class="alert-popup" :class="alertType">
+            <div
+                x-show="currentAlert"
+                x-transition
+                class="alert-popup"
+                :class="alertType"
+                role="alert"
+                aria-live="assertive"
+            >
                 <div class="alert-content">
                     <strong x-text="currentAlert?.message"></strong>
                     <button @click="dismissAlert()" class="btn btn-small">Dismiss</button>
@@ -153,7 +163,7 @@
                                     ✕
                                 </button>
                             </template>
-                            <div class="food-status-indicator"></div>
+                            <div class="food-status-indicator" aria-hidden="true"></div>
                         </div>
                     </div>
                 </template>

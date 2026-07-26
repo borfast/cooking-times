@@ -161,6 +161,7 @@ function addRow(foodId = '', optionId = '') {
     resetButton.type = 'button';
     resetButton.className = 'time-override-reset';
     resetButton.title = 'Use the standard time again';
+    resetButton.setAttribute('aria-label', 'Use the standard cooking time again');
     resetButton.textContent = '⟲';
     resetButton.hidden = true;
 

@@ -38,6 +38,10 @@ function timerApp() {
         message: '',
         messageTone: 'error',
 
+        // G18: polite live-region text. Screen readers get told what changed;
+        // the ticking countdown is marked aria-hidden and says nothing.
+        announcement: '',
+
         // T059-T062: State for editing during timer
         availableFoods: [],
         selectedFoods: [], // Track original selected foods for recalculation
@@ -135,6 +139,17 @@ function timerApp() {
             this.message = '';
         },
 
+        /**
+         * G18: put something in the polite live region.
+         *
+         * The region is aria-atomic, so replacing the text re-announces the whole
+         * string. Repeating an identical string would not be re-announced, so a
+         * counter keeps consecutive identical events distinguishable.
+         */
+        announce(text) {
+            this.announcement = this.announcement === text ? `${text}.` : text;
+        },
+
         // Timer controls
         start() {
             if (this.status !== 'created') return;
@@ -156,6 +171,7 @@ function timerApp() {
             this.status = 'paused';
             this.pausedElapsed = this.elapsedSeconds;
             this.stopTimerLoop();
+            this.announce('Timer paused');
             this.saveSession();
         },
 
@@ -167,6 +183,7 @@ function timerApp() {
             this.startedAt = new Date(Date.now() - (this.pausedElapsed * 1000));
             this.lastTickSecond = null;
             this.startTimerLoop();
+            this.announce('Timer resumed');
             this.saveSession();
         },
 
@@ -238,6 +255,7 @@ function timerApp() {
         complete() {
             this.status = 'completed';
             this.stopTimerLoop();
+            this.announce('All done. Your meal is ready.');
             this.saveSession();
         },
 
@@ -265,6 +283,8 @@ function timerApp() {
             this.currentAlert = alert;
             this.alertActive = true;
             this.alertType = alert.type;
+
+            this.announce(alert.message);
 
             // Play sound
             this.playAlertSound();
