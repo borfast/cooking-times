@@ -10,6 +10,8 @@ import {
     writeCustomFoods,
     readOverrides,
     writeOverride,
+    readKitchen,
+    writeKitchen,
 } from './core/storage.js';
 import {
     findFood,
@@ -18,6 +20,7 @@ import {
     resolveSelection,
     groupByCategory,
 } from './core/foods.js';
+import { applyStrategy, describeConflicts } from './core/capacity.js';
 
 let foods = [];
 let selectedFoods = [];
@@ -274,27 +277,65 @@ function updateSchedule() {
     writePlan(localStorage, selectedFoods);
 
     if (selectedFoods.length > 0) {
-        displaySchedule(calculateSchedule(selectedFoods));
+        // G13/G14: the ideal schedule assumes infinite parallelism. Reconcile it
+        // with what the kitchen can actually do before showing it.
+        displaySchedule(applyStrategy(calculateSchedule(selectedFoods).items, readKitchen(localStorage)));
     } else {
         document.getElementById('schedule-section').style.display = 'none';
     }
 }
 
-function displaySchedule(schedule) {
+/** Show which dishes the strategy moved, and by how much. */
+function movedNote(moved) {
+    if (!moved) {
+        return '';
+    }
+    if (moved.finishesEarlyBy) {
+        return `<small class="moved-note">moved earlier — ready ${formatMinutes(moved.finishesEarlyBy)} min before the rest</small>`;
+    }
+    return `<small class="moved-note">moved later — ready ${formatMinutes(moved.finishesLateBy)} min after the rest</small>`;
+}
+
+function displayConflicts(result) {
+    const panel = document.getElementById('conflict-panel');
+    const lines = describeConflicts(result.conflicts, result.items);
+
+    if (lines.length === 0) {
+        panel.hidden = true;
+        panel.innerHTML = '';
+        return;
+    }
+
+    const heading = result.strategy === 'warn'
+        ? 'This needs more of the kitchen than you have:'
+        : 'Still more than the kitchen can do, even after rearranging:';
+
+    panel.hidden = false;
+    panel.innerHTML = `<strong>${heading}</strong><ul>`
+        + lines.map((line) => `<li>${line}</li>`).join('')
+        + '</ul>';
+}
+
+function displaySchedule(result) {
     const section = document.getElementById('schedule-section');
     const output = document.getElementById('schedule-output');
 
+    displayConflicts(result);
+
     let html = '';
-    schedule.items.forEach((item, index) => {
+    result.items.forEach((item, index) => {
         let intervalText = '';
         if (index > 0) {
-            const intervalSec = item.startTime - schedule.items[index - 1].startTime;
+            const intervalSec = item.startTime - result.items[index - 1].startTime;
             intervalText = `<small>(${formatMinutes(intervalSec)} min after previous)</small>`;
         }
 
+        const moved = result.moved.find((entry) => entry.itemId === item.itemId);
+
         html += `
-            <div class="schedule-item">
+            <div class="schedule-item${moved ? ' schedule-item--moved' : ''}">
                 <strong>${item.foodName} (${item.optionLabel})</strong>
+                ${movedNote(moved)}
                 <div class="time">
                     Start at: ${formatTime(item.startTime)}
                     ${intervalText}
@@ -307,7 +348,7 @@ function displaySchedule(schedule) {
         `;
     });
 
-    html += `<div class="total-time">Total Time: ${formatMinutes(schedule.totalTime)} minutes</div>`;
+    html += `<div class="total-time">Total Time: ${formatMinutes(result.totalTime)} minutes</div>`;
 
     output.innerHTML = html;
     section.style.display = 'block';
@@ -368,6 +409,30 @@ function addCustomFood() {
     showMessage(`Added ${name}.`, 'notice');
 }
 
+// G13/G14: what this kitchen can actually do.
+function restoreKitchen() {
+    const kitchen = readKitchen(localStorage);
+    document.getElementById('kitchen-capacity').value = String(kitchen.capacity);
+    document.getElementById('kitchen-transition').value = String(kitchen.transitionSeconds / 60);
+    document.getElementById('kitchen-strategy').value = kitchen.strategy;
+}
+
+function onKitchenChange() {
+    const capacity = Number(document.getElementById('kitchen-capacity').value);
+    const minutes = Number(document.getElementById('kitchen-transition').value);
+
+    writeKitchen(localStorage, {
+        capacity: Number.isInteger(capacity) && capacity >= 1 ? capacity : 4,
+        transitionSeconds: Number.isFinite(minutes) && minutes >= 0 ? Math.round(minutes * 60) : 0,
+        strategy: document.getElementById('kitchen-strategy').value,
+    });
+    updateSchedule();
+}
+
+for (const id of ['kitchen-capacity', 'kitchen-transition', 'kitchen-strategy']) {
+    document.getElementById(id).addEventListener('change', onKitchenChange);
+}
+
 document.getElementById('add-food-btn').addEventListener('click', () => addRow());
 document.getElementById('custom-food-add').addEventListener('click', addCustomFood);
 
@@ -390,4 +455,5 @@ document.getElementById('start-timer-btn').addEventListener('click', () => {
     window.location.href = 'timer.html';
 });
 
+restoreKitchen();
 loadFoods();

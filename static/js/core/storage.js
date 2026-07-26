@@ -91,3 +91,37 @@ export function writeOverride(storage, foodId, optionId, seconds) {
     }
     storage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
 }
+
+export const KITCHEN_KEY = 'cooking-kitchen';
+
+const KITCHEN_FALLBACK = { capacity: 4, transitionSeconds: 0, strategy: 'warn' };
+const STRATEGIES = ['warn', 'stagger', 'extend'];
+
+/**
+ * What the cook's kitchen can actually do.
+ *
+ * Every field falls back independently, so a partial or half-corrupt record
+ * still yields a usable object rather than breaking the planner.
+ */
+export function readKitchen(storage) {
+    const stored = readJson(storage, KITCHEN_KEY) || {};
+
+    const capacity = Number.isInteger(stored.capacity) && stored.capacity >= 1
+        ? stored.capacity
+        : KITCHEN_FALLBACK.capacity;
+
+    const transitionSeconds = Number.isInteger(stored.transitionSeconds)
+        && stored.transitionSeconds >= 0
+        ? stored.transitionSeconds
+        : KITCHEN_FALLBACK.transitionSeconds;
+
+    const strategy = STRATEGIES.includes(stored.strategy)
+        ? stored.strategy
+        : KITCHEN_FALLBACK.strategy;
+
+    return { capacity, transitionSeconds, strategy };
+}
+
+export function writeKitchen(storage, kitchen) {
+    storage.setItem(KITCHEN_KEY, JSON.stringify(kitchen));
+}

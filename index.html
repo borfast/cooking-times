@@ -58,6 +58,28 @@
                         <p class="section-hint">We time each start so everything finishes together.</p>
                     </div>
                 </div>
+                <div class="kitchen-settings">
+                    <label>
+                        <span>Pans or rings</span>
+                        <input id="kitchen-capacity" type="number" min="1" max="12" value="4">
+                    </label>
+                    <label>
+                        <span>Changeover</span>
+                        <input id="kitchen-transition" type="number" min="0" max="15" value="0">
+                        <small>min</small>
+                    </label>
+                    <label class="kitchen-strategy">
+                        <span>If it won't all fit</span>
+                        <select id="kitchen-strategy">
+                            <option value="warn" selected>Just warn me</option>
+                            <option value="stagger">Start things early, keep them warm</option>
+                            <option value="extend">Push the finish back</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div id="conflict-panel" class="conflict-panel" role="status" hidden></div>
+
                 <div id="schedule-output" class="schedule-list"></div>
                 <button id="start-timer-btn" class="btn btn-success btn-cta">Start Timer</button>
             </section>
