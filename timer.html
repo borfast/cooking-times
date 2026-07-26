@@ -90,30 +90,34 @@
             <!-- Food Schedule List -->
             <section class="food-schedule panel">
                 <h2>Cooking Schedule</h2>
-                <template x-for="item in schedule.items" :key="item.foodId">
+                <template x-for="item in schedule.items" :key="item.itemId">
                     <div class="food-timer-item" :class="{
                         'cooking': isCooking(item),
                         'waiting': isWaiting(item),
                         'done': isDone(item),
-                        'editing': editingFood === item.foodId
+                        'editing': editingFood === item.itemId
                     }">
                         <div class="food-info">
                             <strong x-text="item.foodName"></strong>
-                            <!-- Editable doneness for waiting foods -->
+                            <!-- A still-waiting dish can be re-cooked differently.
+                                 The options come from that food, not a fixed trio. -->
                             <template x-if="isWaiting(item) && canEdit()">
                                 <select
-                                    class="doneness-edit-select"
-                                    :value="item.doneness"
-                                    @change="changeDoneness(item.foodId, $event.target.value)"
+                                    class="option-edit-select"
+                                    aria-label="How you want it cooked"
+                                    @change="changeOption(item.itemId, $event.target.value)"
                                 >
-                                    <option value="rare" :selected="item.doneness === 'rare'">Rare</option>
-                                    <option value="medium" :selected="item.doneness === 'medium'">Medium</option>
-                                    <option value="well-done" :selected="item.doneness === 'well-done'">Well Done</option>
+                                    <template x-for="option in optionsFor(item.itemId)" :key="option.id">
+                                        <option
+                                            :value="option.id"
+                                            :selected="option.label === item.optionLabel"
+                                            x-text="option.label"
+                                        ></option>
+                                    </template>
                                 </select>
                             </template>
-                            <!-- Non-editable doneness display for cooking/done foods -->
                             <template x-if="!isWaiting(item) || !canEdit()">
-                                <span class="doneness" x-text="item.doneness"></span>
+                                <span class="doneness" x-text="item.optionLabel"></span>
                             </template>
                         </div>
                         <div class="food-timing">
@@ -134,7 +138,7 @@
                         <div class="food-actions">
                             <!-- Remove button for waiting foods -->
                             <template x-if="isWaiting(item) && canEdit()">
-                                <button @click="removeFood(item.foodId)" class="btn btn-danger btn-small" title="Remove">
+                                <button @click="removeFood(item.itemId)" class="btn btn-danger btn-small" :aria-label="`Remove ${item.foodName}`">
                                     ✕
                                 </button>
                             </template>
@@ -153,16 +157,16 @@
                 <!-- Add Food Form -->
                 <template x-if="addingFood">
                     <div class="add-food-form">
-                        <select x-model="newFoodId" class="food-select">
+                        <select x-model="newFoodId" @change="onNewFoodChange()" class="food-select" aria-label="Food">
                             <option value="">Select a food...</option>
                             <template x-for="food in availableFoods" :key="food.id">
                                 <option :value="food.id" x-text="food.name"></option>
                             </template>
                         </select>
-                        <select x-model="newFoodDoneness" class="doneness-select">
-                            <option value="rare">Rare</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="well-done">Well Done</option>
+                        <select x-model="newFoodOptionId" class="option-select" aria-label="How you want it cooked" :disabled="!newFoodId">
+                            <template x-for="option in newFoodOptions" :key="option.id">
+                                <option :value="option.id" x-text="option.label"></option>
+                            </template>
                         </select>
                         <button @click="addFood()" class="btn btn-success" :disabled="!newFoodId">Add</button>
                         <button @click="cancelAddFood()" class="btn btn-secondary">Cancel</button>

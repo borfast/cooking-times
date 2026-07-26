@@ -9,6 +9,10 @@ import {
   writeSession,
   clearSession,
   isSessionLive,
+  readCustomFoods,
+  writeCustomFoods,
+  readOverrides,
+  writeOverride,
 } from '../../static/js/core/storage.js';
 
 /** Minimal stand-in for Window.localStorage. */
@@ -105,4 +109,51 @@ test('isSessionLive is true only mid-cook', () => {
   assert.equal(isSessionLive({ status: 'completed' }), false);
   assert.equal(isSessionLive(null), false);
   assert.equal(isSessionLive(undefined), false);
+});
+
+test('custom foods round-trip and default to empty', () => {
+  const storage = fakeStorage();
+  assert.deepEqual(readCustomFoods(storage), []);
+
+  const mine = [{
+    id: 'custom-roast',
+    name: 'My Roast',
+    category: 'Meat',
+    defaultOptionId: 'done',
+    options: [{ id: 'done', label: 'Done', seconds: 5400 }],
+  }];
+  writeCustomFoods(storage, mine);
+
+  assert.deepEqual(readCustomFoods(storage), mine);
+});
+
+test('custom foods survive corrupt storage', () => {
+  assert.deepEqual(readCustomFoods(fakeStorage({ 'cooking-custom-foods': '{{' })), []);
+});
+
+test('an override is remembered per food and option', () => {
+  const storage = fakeStorage();
+  assert.deepEqual(readOverrides(storage), {});
+
+  writeOverride(storage, 'chicken', 'cooked-through', 5400);
+
+  assert.equal(readOverrides(storage)['chicken:cooked-through'], 5400);
+});
+
+test('overrides for different options of one food are independent', () => {
+  const storage = fakeStorage();
+  writeOverride(storage, 'beef-steak', 'rare', 300);
+  writeOverride(storage, 'beef-steak', 'well-done', 900);
+
+  const overrides = readOverrides(storage);
+  assert.equal(overrides['beef-steak:rare'], 300);
+  assert.equal(overrides['beef-steak:well-done'], 900);
+});
+
+test('writing a null override forgets it', () => {
+  const storage = fakeStorage();
+  writeOverride(storage, 'chicken', 'cooked-through', 5400);
+  writeOverride(storage, 'chicken', 'cooked-through', null);
+
+  assert.deepEqual(readOverrides(storage), {});
 });

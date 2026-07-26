@@ -6,11 +6,22 @@ import {
     readSession,
     clearSession,
     isSessionLive,
+    readCustomFoods,
+    writeCustomFoods,
+    readOverrides,
+    writeOverride,
 } from './core/storage.js';
+import {
+    findFood,
+    findOption,
+    defaultOption,
+    resolveSelection,
+    groupByCategory,
+} from './core/foods.js';
 
 let foods = [];
 let selectedFoods = [];
-let foodCounter = 0;
+let rowCounter = 0;
 
 // G8: inline messaging instead of blocking alert() dialogs.
 function showMessage(text, tone = 'error') {
@@ -26,147 +37,237 @@ function clearMessage() {
     region.textContent = '';
 }
 
-// Load foods from API
 async function loadFoods() {
     try {
         const response = await fetch('static/foods.json');
         const data = await response.json();
-        foods = data.foods;
-        restoreFoodSelectors();
+        // G24: the bundled catalogue is no longer the whole world.
+        foods = [...data.foods, ...readCustomFoods(localStorage)];
+        restoreRows();
     } catch (error) {
         console.error('Failed to load foods:', error);
         showMessage('Could not load the food list. Check your connection and reload.');
     }
 }
 
-// Add a food selector row
-function addFoodSelector(selectedFoodId = '', selectedDoneness = 'medium') {
-    const foodList = document.getElementById('food-list');
-    const id = foodCounter++;
+/** Populate a food <select> with optgroups, then select `foodId` if given. */
+function fillFoodSelect(select, foodId) {
+    select.innerHTML = '<option value="">Select a food...</option>';
 
-    const div = document.createElement('div');
-    div.className = 'food-item';
-    div.id = `food-${id}`;
-
-    const foodSelect = document.createElement('select');
-    foodSelect.className = 'food-select';
-    foodSelect.innerHTML = '<option value="">Select a food...</option>';
-
-    // Group foods by category
-    const foodsByCategory = {};
-    foods.forEach(food => {
-        const category = food.category || 'Other';
-        if (!foodsByCategory[category]) {
-            foodsByCategory[category] = [];
-        }
-        foodsByCategory[category].push(food);
-    });
-
-    // Create optgroups sorted by category name
-    Object.keys(foodsByCategory).sort().forEach(category => {
-        const group = document.createElement('optgroup');
-        group.label = category;
-        
-        // Sort foods by name within category
-        foodsByCategory[category].sort((a, b) => a.name.localeCompare(b.name)).forEach(food => {
+    for (const group of groupByCategory(foods)) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = group.category;
+        for (const food of group.foods) {
             const option = document.createElement('option');
             option.value = food.id;
             option.textContent = food.name;
-            group.appendChild(option);
-        });
-        
-        foodSelect.appendChild(group);
-    });
-
-    const donenessSelect = document.createElement('select');
-    donenessSelect.className = 'doneness-select';
-    donenessSelect.innerHTML = `
-        <option value="rare">Rare</option>
-        <option value="medium" selected>Medium</option>
-        <option value="well-done">Well Done</option>
-    `;
-
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'btn btn-danger btn-icon';
-    removeBtn.type = 'button';
-    removeBtn.setAttribute('aria-label', 'Remove food');
-    removeBtn.textContent = '✕';
-    removeBtn.onclick = () => {
-        div.remove();
-        updateSchedule();
-    };
-
-    div.appendChild(foodSelect);
-    div.appendChild(donenessSelect);
-    div.appendChild(removeBtn);
-    foodList.appendChild(div);
-
-    if (selectedFoodId) {
-        foodSelect.value = selectedFoodId;
-    }
-    if (selectedDoneness) {
-        donenessSelect.value = selectedDoneness;
+            optgroup.appendChild(option);
+        }
+        select.appendChild(optgroup);
     }
 
-    foodSelect.addEventListener('change', updateSchedule);
-    donenessSelect.addEventListener('change', updateSchedule);
+    if (foodId) {
+        select.value = foodId;
+    }
 }
 
-function restoreFoodSelectors() {
-    const savedFoods = readPlan(localStorage);
+/**
+ * Rebuild a row's option <select> from the chosen food's own options.
+ *
+ * G21/G22: the axis is per-food. A steak offers three; rice offers one. A
+ * single-option food still renders the select so every row reads the same way.
+ */
+function fillOptionSelect(select, food, optionId) {
+    select.innerHTML = '';
 
-    if (savedFoods.length === 0) {
-        addFoodSelector();
+    if (!food) {
+        select.disabled = true;
         return;
     }
 
-    savedFoods.forEach(item => {
-        addFoodSelector(item.foodId, item.doneness);
-    });
-    updateSchedule();
+    select.disabled = false;
+    for (const option of food.options) {
+        const element = document.createElement('option');
+        element.value = option.id;
+        element.textContent = option.label;
+        select.appendChild(element);
+    }
+    select.value = findOption(food, optionId) ? optionId : defaultOption(food).id;
 }
 
-// Update schedule display
-function updateSchedule() {
-    const foodItems = document.querySelectorAll('.food-item');
-    const seen = new Set();
-    const duplicates = new Set();
-    selectedFoods = [];
+/** Show the resolved duration in the row's minutes field. */
+function refreshTimeField(row) {
+    const food = findFood(foods, row.querySelector('.food-select').value);
+    const timeField = row.querySelector('.time-override-input');
+    const resetButton = row.querySelector('.time-override-reset');
 
-    foodItems.forEach(item => {
-        const foodId = item.querySelector('.food-select').value;
-        const doneness = item.querySelector('.doneness-select').value;
-        if (!foodId) {
-            return;
-        }
+    if (!food) {
+        timeField.value = '';
+        timeField.disabled = true;
+        resetButton.hidden = true;
+        return;
+    }
 
-        const food = foods.find(f => f.id === foodId);
+    timeField.disabled = false;
+
+    const optionId = row.querySelector('.option-select').value;
+    const overrides = readOverrides(localStorage);
+    const override = overrides[`${food.id}:${optionId}`];
+    const seconds = override || findOption(food, optionId).seconds;
+
+    timeField.value = String(Math.round(seconds / 60));
+    resetButton.hidden = !override;
+    row.classList.toggle('food-item--overridden', Boolean(override));
+}
+
+function addRow(foodId = '', optionId = '') {
+    const list = document.getElementById('food-list');
+    const itemId = `row-${rowCounter++}`;
+
+    const row = document.createElement('div');
+    row.className = 'food-item';
+    row.dataset.itemId = itemId;
+
+    const foodSelect = document.createElement('select');
+    foodSelect.className = 'food-select';
+    foodSelect.setAttribute('aria-label', 'Food');
+    fillFoodSelect(foodSelect, foodId);
+
+    const optionSelect = document.createElement('select');
+    optionSelect.className = 'option-select';
+    optionSelect.setAttribute('aria-label', 'How you want it cooked');
+    fillOptionSelect(optionSelect, findFood(foods, foodId), optionId);
+
+    // G23/G24: the bundled times ignore quantity, thickness and method. Let the
+    // cook correct the number, and remember the correction per food and option.
+    const timeWrap = document.createElement('div');
+    timeWrap.className = 'time-override';
+
+    const timeField = document.createElement('input');
+    timeField.type = 'number';
+    timeField.min = '1';
+    timeField.max = '600';
+    timeField.className = 'time-override-input';
+    timeField.setAttribute('aria-label', 'Cooking time in minutes');
+
+    const timeUnit = document.createElement('span');
+    timeUnit.className = 'time-override-unit';
+    timeUnit.textContent = 'min';
+
+    const resetButton = document.createElement('button');
+    resetButton.type = 'button';
+    resetButton.className = 'time-override-reset';
+    resetButton.title = 'Use the standard time again';
+    resetButton.textContent = '⟲';
+    resetButton.hidden = true;
+
+    timeWrap.append(timeField, timeUnit, resetButton);
+
+    const removeButton = document.createElement('button');
+    removeButton.className = 'btn btn-danger btn-icon';
+    removeButton.type = 'button';
+    removeButton.setAttribute('aria-label', 'Remove food');
+    removeButton.textContent = '✕';
+
+    row.append(foodSelect, optionSelect, timeWrap, removeButton);
+    list.appendChild(row);
+
+    foodSelect.addEventListener('change', () => {
+        const food = findFood(foods, foodSelect.value);
+        fillOptionSelect(optionSelect, food, '');
+        refreshTimeField(row);
+        updateSchedule();
+    });
+
+    optionSelect.addEventListener('change', () => {
+        refreshTimeField(row);
+        updateSchedule();
+    });
+
+    timeField.addEventListener('change', () => {
+        const food = findFood(foods, foodSelect.value);
         if (!food) {
             return;
         }
+        const minutes = Number(timeField.value);
+        const standard = findOption(food, optionSelect.value).seconds;
+        const seconds = Math.round(minutes * 60);
 
-        // G3: the timer identifies dishes by foodId, so two rows of the same
-        // food would collide there and in Alpine's x-for keys.
-        if (seen.has(foodId)) {
-            duplicates.add(food.name);
+        if (!Number.isFinite(seconds) || seconds <= 0) {
+            refreshTimeField(row);
+            showMessage('Cooking time must be at least one minute.');
             return;
         }
-        seen.add(foodId);
 
-        selectedFoods.push({
-            foodId: foodId,
-            foodName: food.name,
-            doneness: doneness,
-            cookingTime: food.cookingTimes[doneness]
-        });
+        clearMessage();
+        // Matching the standard time means "no correction", not "correct to the
+        // same number" — otherwise the reset affordance never goes away.
+        writeOverride(
+            localStorage,
+            food.id,
+            optionSelect.value,
+            seconds === standard ? null : seconds,
+        );
+        refreshTimeField(row);
+        updateSchedule();
     });
 
-    if (duplicates.size > 0) {
-        showMessage(
-            `Already on the menu: ${[...duplicates].join(', ')}. Remove the duplicate row.`,
-        );
-    } else {
-        clearMessage();
+    resetButton.addEventListener('click', () => {
+        const food = findFood(foods, foodSelect.value);
+        if (!food) {
+            return;
+        }
+        writeOverride(localStorage, food.id, optionSelect.value, null);
+        refreshTimeField(row);
+        updateSchedule();
+    });
+
+    removeButton.addEventListener('click', () => {
+        row.remove();
+        updateSchedule();
+    });
+
+    refreshTimeField(row);
+    return row;
+}
+
+function restoreRows() {
+    const saved = readPlan(localStorage);
+
+    if (saved.length === 0) {
+        addRow();
+        return;
+    }
+
+    for (const row of saved) {
+        addRow(row.foodId, row.optionId);
+    }
+    updateSchedule();
+}
+
+function updateSchedule() {
+    const overrides = readOverrides(localStorage);
+    selectedFoods = [];
+
+    // D6: rows are independent. Two portions of the same food at different
+    // options are a legitimate menu, so there is no duplicate check here.
+    for (const row of document.querySelectorAll('.food-item')) {
+        const foodId = row.querySelector('.food-select').value;
+        if (!foodId) {
+            continue;
+        }
+
+        const optionId = row.querySelector('.option-select').value;
+        const selection = resolveSelection(foods, {
+            itemId: row.dataset.itemId,
+            foodId,
+            optionId,
+            overrideSeconds: overrides[`${foodId}:${optionId}`],
+        });
+
+        if (selection) {
+            selectedFoods.push(selection);
+        }
     }
 
     // G7: persist on every change, not only when the timer starts.
@@ -179,7 +280,6 @@ function updateSchedule() {
     }
 }
 
-// Display schedule
 function displaySchedule(schedule) {
     const section = document.getElementById('schedule-section');
     const output = document.getElementById('schedule-output');
@@ -194,7 +294,7 @@ function displaySchedule(schedule) {
 
         html += `
             <div class="schedule-item">
-                <strong>${item.foodName} (${item.doneness})</strong>
+                <strong>${item.foodName} (${item.optionLabel})</strong>
                 <div class="time">
                     Start at: ${formatTime(item.startTime)}
                     ${intervalText}
@@ -210,8 +310,63 @@ function displaySchedule(schedule) {
     section.style.display = 'block';
 }
 
-// Event listeners
-document.getElementById('add-food-btn').addEventListener('click', addFoodSelector);
+// G24: user-defined foods, so the catalogue is no longer closed.
+function slugify(name) {
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+function addCustomFood() {
+    const nameField = document.getElementById('custom-food-name');
+    const minutesField = document.getElementById('custom-food-minutes');
+    const categoryField = document.getElementById('custom-food-category');
+
+    const name = nameField.value.trim();
+    const minutes = Number(minutesField.value);
+
+    if (!name) {
+        showMessage('Give your food a name.');
+        return;
+    }
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+        showMessage('Give your food a cooking time of at least one minute.');
+        return;
+    }
+
+    const id = `custom-${slugify(name)}`;
+    if (findFood(foods, id)) {
+        showMessage(`You already have a food called ${name}.`);
+        return;
+    }
+
+    const food = {
+        id,
+        name,
+        category: categoryField.value || 'Other',
+        defaultOptionId: 'cooked',
+        options: [{ id: 'cooked', label: 'Cooked', seconds: Math.round(minutes * 60) }],
+    };
+
+    const mine = readCustomFoods(localStorage);
+    mine.push(food);
+    writeCustomFoods(localStorage, mine);
+    foods = [...foods, food];
+
+    // Existing rows need the new food in their pickers.
+    for (const row of document.querySelectorAll('.food-item')) {
+        const select = row.querySelector('.food-select');
+        fillFoodSelect(select, select.value);
+    }
+
+    nameField.value = '';
+    minutesField.value = '';
+    showMessage(`Added ${name}.`, 'notice');
+}
+
+document.getElementById('add-food-btn').addEventListener('click', () => addRow());
+document.getElementById('custom-food-add').addEventListener('click', addCustomFood);
 
 document.getElementById('start-timer-btn').addEventListener('click', () => {
     // G1: the timer prefers a saved session over a saved plan, so a stale
@@ -232,5 +387,4 @@ document.getElementById('start-timer-btn').addEventListener('click', () => {
     window.location.href = 'timer.html';
 });
 
-// Initialize
 loadFoods();

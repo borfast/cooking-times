@@ -1,6 +1,14 @@
 import { calculateSchedule, recalculateSchedule } from './core/schedule.js';
 import { formatTime as formatDuration } from './core/format.js';
-import { readPlan, readSession, writeSession, clearSession } from './core/storage.js';
+import {
+    readPlan,
+    readSession,
+    writeSession,
+    clearSession,
+    readCustomFoods,
+    readOverrides,
+} from './core/storage.js';
+import { findFood, findOption, defaultOption } from './core/foods.js';
 import {
     generateAlerts,
     regenerateAlerts,
@@ -24,6 +32,7 @@ function timerApp() {
         timerInterval: null,
         lastTickSecond: null,
         lastSavedSecond: null,
+        nextItemId: 0,
 
         // G8: inline messaging instead of blocking alert() dialogs.
         message: '',
@@ -34,7 +43,7 @@ function timerApp() {
         selectedFoods: [], // Track original selected foods for recalculation
         addingFood: false,
         newFoodId: '',
-        newFoodDoneness: 'medium',
+        newFoodOptionId: '',
         editingFood: null,
 
         // Computed
@@ -69,7 +78,8 @@ function timerApp() {
             try {
                 const response = await fetch('static/foods.json');
                 const data = await response.json();
-                this.availableFoods = data.foods;
+                // G24: custom foods are available mid-cook too.
+                this.availableFoods = [...data.foods, ...readCustomFoods(localStorage)];
             } catch (e) {
                 console.error('Failed to load foods:', e);
             }
@@ -349,79 +359,95 @@ function timerApp() {
             return this.status === 'running' || this.status === 'paused';
         },
 
-        // T060: Change doneness for a food item
-        changeDoneness(foodId, newDoneness) {
-            // Find the food in selectedFoods
-            const foodIndex = this.selectedFoods.findIndex(f => f.foodId === foodId);
-            if (foodIndex === -1) return;
+        // Change how a still-waiting dish is cooked. Keyed on itemId (D6).
+        changeOption(itemId, newOptionId) {
+            const index = this.selectedFoods.findIndex(f => f.itemId === itemId);
+            if (index === -1) return;
 
-            // Check if food has already started cooking
-            const scheduleItem = this.schedule.items.find(item => item.foodId === foodId);
+            const scheduleItem = this.schedule.items.find(item => item.itemId === itemId);
             if (scheduleItem && !this.isWaiting(scheduleItem)) {
-                this.notify('That dish has already started cooking, so its doneness is locked in.');
+                this.notify('That dish has already started cooking, so its timing is locked in.');
                 return;
             }
 
-            // Get the food data from available foods
-            const foodData = this.availableFoods.find(f => f.id === foodId);
-            if (!foodData) return;
+            const selection = this.selectedFoods[index];
+            const food = findFood(this.availableFoods, selection.foodId);
+            const option = food && findOption(food, newOptionId);
+            if (!option) return;
 
-            // Update the selected food with new doneness and cooking time
-            this.selectedFoods[foodIndex] = {
-                ...this.selectedFoods[foodIndex],
-                doneness: newDoneness,
-                cookingTime: foodData.cookingTimes[newDoneness]
+            const override = readOverrides(localStorage)[`${food.id}:${option.id}`];
+
+            this.selectedFoods[index] = {
+                ...selection,
+                optionId: option.id,
+                optionLabel: option.label,
+                cookingTime: override || option.seconds,
+                overridden: Boolean(override),
             };
 
-            // Recalculate schedule preserving elapsed time
             this.recalculateSchedulePreservingProgress();
+        },
+
+        /** The options available for a dish already on the menu. */
+        optionsFor(itemId) {
+            const selection = this.selectedFoods.find(f => f.itemId === itemId);
+            const food = selection && findFood(this.availableFoods, selection.foodId);
+            return food ? food.options : [];
         },
 
         // T061: Add a new food during timer
         startAddingFood() {
             this.addingFood = true;
             this.newFoodId = '';
-            this.newFoodDoneness = 'medium';
+            this.newFoodOptionId = '';
         },
 
         cancelAddFood() {
             this.addingFood = false;
             this.newFoodId = '';
-            this.newFoodDoneness = 'medium';
+            this.newFoodOptionId = '';
+        },
+
+        /** Options for the food chosen in the add-food form. */
+        get newFoodOptions() {
+            const food = findFood(this.availableFoods, this.newFoodId);
+            return food ? food.options : [];
+        },
+
+        /** Reset the option choice whenever a different food is picked. */
+        onNewFoodChange() {
+            const food = findFood(this.availableFoods, this.newFoodId);
+            this.newFoodOptionId = food ? defaultOption(food).id : '';
         },
 
         addFood() {
             if (!this.newFoodId) return;
 
-            // Get food data
-            const foodData = this.availableFoods.find(f => f.id === this.newFoodId);
-            if (!foodData) return;
+            const food = findFood(this.availableFoods, this.newFoodId);
+            if (!food) return;
 
-            // Check if food is already in the schedule
-            const existingIndex = this.selectedFoods.findIndex(f => f.foodId === this.newFoodId);
-            if (existingIndex !== -1) {
-                this.notify(`${foodData.name} is already on the menu.`);
-                return;
-            }
+            const option = findOption(food, this.newFoodOptionId) || defaultOption(food);
+            const override = readOverrides(localStorage)[`${food.id}:${option.id}`];
 
-            // Add new food to selectedFoods
+            // D6: no duplicate check. Each row has its own itemId, so a second
+            // portion of the same food at a different option is legitimate.
             this.selectedFoods.push({
-                foodId: this.newFoodId,
-                foodName: foodData.name,
-                doneness: this.newFoodDoneness,
-                cookingTime: foodData.cookingTimes[this.newFoodDoneness]
+                itemId: `timer-${this.nextItemId++}`,
+                foodId: food.id,
+                foodName: food.name,
+                optionId: option.id,
+                optionLabel: option.label,
+                cookingTime: override || option.seconds,
+                overridden: Boolean(override),
             });
 
-            // Recalculate schedule
             this.recalculateSchedulePreservingProgress();
-
-            // Reset add food form
             this.cancelAddFood();
         },
 
-        // T061: Remove a food during timer
-        removeFood(foodId) {
-            const scheduleItem = this.schedule.items.find(item => item.foodId === foodId);
+        // Remove a still-waiting dish. Keyed on itemId (D6).
+        removeFood(itemId) {
+            const scheduleItem = this.schedule.items.find(item => item.itemId === itemId);
             if (scheduleItem && !this.isWaiting(scheduleItem)) {
                 this.notify('That dish has already started cooking, so it cannot be removed.');
                 return;
@@ -430,10 +456,10 @@ function timerApp() {
             // G12: keep the actual selection so it can be restored verbatim,
             // rather than rebuilding it from schedule fields via a scheduleItem
             // that the guard above has already admitted might be missing.
-            const removed = this.selectedFoods.find(f => f.foodId === foodId);
+            const removed = this.selectedFoods.find(f => f.itemId === itemId);
             if (!removed) return;
 
-            this.selectedFoods = this.selectedFoods.filter(f => f.foodId !== foodId);
+            this.selectedFoods = this.selectedFoods.filter(f => f.itemId !== itemId);
 
             if (this.selectedFoods.length === 0) {
                 // Put it back: an empty schedule has nothing to count down to.

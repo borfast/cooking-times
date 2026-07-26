@@ -33,6 +33,22 @@
                 </div>
                 <div id="food-list" class="stack"></div>
                 <button id="add-food-btn" class="btn btn-primary btn-cta">+ Add Food</button>
+
+                <details class="custom-food">
+                    <summary>Add your own food</summary>
+                    <div class="custom-food-form">
+                        <input id="custom-food-name" type="text" placeholder="e.g. My roast chicken" aria-label="Food name">
+                        <input id="custom-food-minutes" type="number" min="1" max="600" placeholder="min" aria-label="Cooking time in minutes">
+                        <select id="custom-food-category" aria-label="Category">
+                            <option value="Meat">Meat</option>
+                            <option value="Fish">Fish</option>
+                            <option value="Vegetables">Vegetables</option>
+                            <option value="Grains">Grains</option>
+                            <option value="Other" selected>Other</option>
+                        </select>
+                        <button id="custom-food-add" type="button" class="btn btn-success">Add</button>
+                    </div>
+                </details>
             </section>
 
             <section class="schedule-display panel" id="schedule-section" style="display: none;">
