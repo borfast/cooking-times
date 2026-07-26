@@ -1,15 +1,5 @@
-# Binaries
-server
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
-
-# Go
-vendor/
+# Node
+node_modules/
 
 # IDEs
 .DS_Store
@@ -29,6 +19,3 @@ Thumbs.db
 
 # Tooling output
 .playwright-mcp/
-
-# Node
-node_modules/
