@@ -42,7 +42,8 @@ const SHELL = [
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_VERSION)
+        caches
+            .open(CACHE_VERSION)
             .then((cache) => cache.addAll(SHELL))
             .then(() => self.skipWaiting()),
     );
@@ -50,10 +51,15 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys()
-            .then((names) => Promise.all(
-                names.filter((name) => name !== CACHE_VERSION).map((name) => caches.delete(name)),
-            ))
+        caches
+            .keys()
+            .then((names) =>
+                Promise.all(
+                    names
+                        .filter((name) => name !== CACHE_VERSION)
+                        .map((name) => caches.delete(name)),
+                ),
+            )
             .then(() => self.clients.claim()),
     );
 });
@@ -61,7 +67,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const request = event.request;
 
-    if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) {
+    if (
+        request.method !== 'GET' ||
+        new URL(request.url).origin !== self.location.origin
+    ) {
         return;
     }
 

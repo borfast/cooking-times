@@ -1,24 +1,24 @@
-import { calculateSchedule } from './core/schedule.js';
-import { formatTime, formatMinutes } from './core/format.js';
 import {
-    readPlan,
-    writePlan,
-    readSession,
+    defaultOption,
+    findFood,
+    findOption,
+    groupByCategory,
+    resolveSelection,
+} from './core/foods.js';
+import { formatMinutes, formatTime } from './core/format.js';
+import { runsheetText } from './core/runsheet.js';
+import { calculateSchedule } from './core/schedule.js';
+import {
     clearSession,
     isSessionLive,
     readCustomFoods,
-    writeCustomFoods,
     readOverrides,
+    readPlan,
+    readSession,
+    writeCustomFoods,
     writeOverride,
+    writePlan,
 } from './core/storage.js';
-import {
-    findFood,
-    findOption,
-    defaultOption,
-    resolveSelection,
-    groupByCategory,
-} from './core/foods.js';
-import { runsheetText } from './core/runsheet.js';
 
 let foods = [];
 let selectedFoods = [];
@@ -48,7 +48,9 @@ async function loadFoods() {
         restoreRows();
     } catch (error) {
         console.error('Failed to load foods:', error);
-        showMessage('Could not load the food list. Check your connection and reload.');
+        showMessage(
+            'Could not load the food list. Check your connection and reload.',
+        );
     }
 }
 
@@ -94,7 +96,9 @@ function fillOptionSelect(select, food, optionId) {
         element.textContent = option.label;
         select.appendChild(element);
     }
-    select.value = findOption(food, optionId) ? optionId : defaultOption(food).id;
+    select.value = findOption(food, optionId)
+        ? optionId
+        : defaultOption(food).id;
 }
 
 /** Show the resolved duration in the row's minutes field. */
@@ -160,7 +164,10 @@ function addRow(foodId = '', optionId = '') {
     resetButton.type = 'button';
     resetButton.className = 'time-override-reset';
     resetButton.title = 'Use the standard time again';
-    resetButton.setAttribute('aria-label', 'Use the standard cooking time again');
+    resetButton.setAttribute(
+        'aria-label',
+        'Use the standard cooking time again',
+    );
     resetButton.textContent = '⟲';
     resetButton.hidden = true;
 
@@ -293,7 +300,8 @@ function displaySchedule(result) {
     result.items.forEach((item, index) => {
         let intervalText = '';
         if (index > 0) {
-            const intervalSec = item.startTime - result.items[index - 1].startTime;
+            const intervalSec =
+                item.startTime - result.items[index - 1].startTime;
             intervalText = `<small>(${formatMinutes(intervalSec)} min after previous)</small>`;
         }
 
@@ -305,9 +313,11 @@ function displaySchedule(result) {
                     ${intervalText}
                 </div>
                 <div class="time">Cook for: ${formatMinutes(item.cookDuration)} minutes</div>
-                ${item.restSeconds > 0
-                    ? `<div class="time">Off the heat at ${formatTime(item.heatOffTime)}, then rest ${formatMinutes(item.restSeconds)} min</div>`
-                    : ''}
+                ${
+                    item.restSeconds > 0
+                        ? `<div class="time">Off the heat at ${formatTime(item.heatOffTime)}, then rest ${formatMinutes(item.restSeconds)} min</div>`
+                        : ''
+                }
             </div>
         `;
     });
@@ -354,7 +364,13 @@ function addCustomFood() {
         name,
         category: categoryField.value || 'Other',
         defaultOptionId: 'cooked',
-        options: [{ id: 'cooked', label: 'Cooked', seconds: Math.round(minutes * 60) }],
+        options: [
+            {
+                id: 'cooked',
+                label: 'Cooked',
+                seconds: Math.round(minutes * 60),
+            },
+        ],
     };
 
     const mine = readCustomFoods(localStorage);
@@ -394,7 +410,10 @@ async function copyRunsheet() {
         showMessage('Running order copied.', 'notice');
         return;
     } catch (error) {
-        console.warn('Clipboard API unavailable, falling back to a selection:', error);
+        console.warn(
+            'Clipboard API unavailable, falling back to a selection:',
+            error,
+        );
     }
 
     // Fallback for browsers without the Clipboard API, or a denied permission.
@@ -405,21 +424,31 @@ async function copyRunsheet() {
     scratch.style.opacity = '0';
     document.body.appendChild(scratch);
     scratch.select();
-    const copied = document.execCommand && document.execCommand('copy');
+    const copied = document.execCommand?.('copy');
     document.body.removeChild(scratch);
 
     showMessage(
-        copied ? 'Running order copied.' : 'Could not copy — select the schedule and copy manually.',
+        copied
+            ? 'Running order copied.'
+            : 'Could not copy — select the schedule and copy manually.',
         copied ? 'notice' : 'error',
     );
 }
 
-document.getElementById('copy-runsheet').addEventListener('click', copyRunsheet);
-document.getElementById('print-runsheet').addEventListener('click', () => window.print());
+document
+    .getElementById('copy-runsheet')
+    .addEventListener('click', copyRunsheet);
+document
+    .getElementById('print-runsheet')
+    .addEventListener('click', () => window.print());
 document.getElementById('serve-at').addEventListener('change', updateSchedule);
 
-document.getElementById('add-food-btn').addEventListener('click', () => addRow());
-document.getElementById('custom-food-add').addEventListener('click', addCustomFood);
+document
+    .getElementById('add-food-btn')
+    .addEventListener('click', () => addRow());
+document
+    .getElementById('custom-food-add')
+    .addEventListener('click', addCustomFood);
 
 document.getElementById('start-timer-btn').addEventListener('click', () => {
     // G1: the timer prefers a saved session over a saved plan, so a stale

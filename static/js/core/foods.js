@@ -17,7 +17,7 @@ export function findFood(catalogue, foodId) {
 }
 
 export function findOption(food, optionId) {
-    if (!food || !food.options) {
+    if (!food?.options) {
         return null;
     }
     return food.options.find((option) => option.id === optionId) || null;
@@ -59,7 +59,9 @@ export function resolveSelection(catalogue, row) {
         // D4: rest is declared per food, not per option. A resting dish is off
         // the heat for this long before it is ready to serve.
         restSeconds:
-            Number.isInteger(food.restSeconds) && food.restSeconds > 0 ? food.restSeconds : 0,
+            Number.isInteger(food.restSeconds) && food.restSeconds > 0
+                ? food.restSeconds
+                : 0,
     };
 }
 
@@ -77,7 +79,9 @@ export function groupByCategory(catalogue) {
 
     return [...groups.keys()].sort().map((category) => ({
         category,
-        foods: groups.get(category).sort((a, b) => a.name.localeCompare(b.name)),
+        foods: groups
+            .get(category)
+            .sort((a, b) => a.name.localeCompare(b.name)),
     }));
 }
 
@@ -114,7 +118,9 @@ export function catalogueProblems(catalogue) {
                 problems.push(`${where}: option ${option.id} has no label`);
             }
             if (!Number.isInteger(option.seconds) || option.seconds <= 0) {
-                problems.push(`${where}: option ${option.id} has a non-positive duration`);
+                problems.push(
+                    `${where}: option ${option.id} has a non-positive duration`,
+                );
             }
         }
 

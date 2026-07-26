@@ -29,3 +29,6 @@ Thumbs.db
 
 # Tooling output
 .playwright-mcp/
+
+# Node
+node_modules/

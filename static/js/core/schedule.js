@@ -98,7 +98,9 @@ export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
     const waiting = [];
 
     for (const selection of selections) {
-        const inForce = current.find((item) => item.itemId === selection.itemId);
+        const inForce = current.find(
+            (item) => item.itemId === selection.itemId,
+        );
         if (inForce && elapsedSeconds >= inForce.startTime) {
             started.push({ selection, inForce });
         } else {
@@ -141,7 +143,10 @@ export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
                 // The clamp is currently unreachable: totalTime is at least
                 // elapsedSeconds + the slowest ready time, and this dish's ready
                 // time is at most that. Kept as a guard.
-                startTime: Math.max(heatOffTime - selection.cookingTime, elapsedSeconds),
+                startTime: Math.max(
+                    heatOffTime - selection.cookingTime,
+                    elapsedSeconds,
+                ),
                 cookDuration: selection.cookingTime,
                 heatOffTime,
                 restSeconds: rest,

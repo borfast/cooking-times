@@ -1,575 +1,575 @@
 {
-  "foods": [
-    {
-      "id": "chicken",
-      "name": "Chicken",
-      "category": "Meat",
-      "restSeconds": 600,
-      "defaultOptionId": "cooked-through",
-      "options": [
+    "foods": [
         {
-          "id": "cooked-through",
-          "label": "Cooked through",
-          "seconds": 1500
+            "id": "chicken",
+            "name": "Chicken",
+            "category": "Meat",
+            "restSeconds": 600,
+            "defaultOptionId": "cooked-through",
+            "options": [
+                {
+                    "id": "cooked-through",
+                    "label": "Cooked through",
+                    "seconds": 1500
+                }
+            ]
+        },
+        {
+            "id": "potatoes",
+            "name": "Potatoes",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 1200
+                },
+                {
+                    "id": "very-soft",
+                    "label": "Very soft",
+                    "seconds": 1500
+                }
+            ]
+        },
+        {
+            "id": "carrots",
+            "name": "Carrots",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 300
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 600
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 900
+                }
+            ]
+        },
+        {
+            "id": "kale",
+            "name": "Kale",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 180
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 360
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 540
+                }
+            ]
+        },
+        {
+            "id": "rice",
+            "name": "Rice",
+            "category": "Grains",
+            "defaultOptionId": "cooked",
+            "options": [
+                {
+                    "id": "cooked",
+                    "label": "Cooked",
+                    "seconds": 1200
+                }
+            ]
+        },
+        {
+            "id": "broccoli",
+            "name": "Broccoli",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 180
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 300
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 420
+                }
+            ]
+        },
+        {
+            "id": "salmon",
+            "name": "Salmon",
+            "category": "Fish",
+            "defaultOptionId": "medium",
+            "options": [
+                {
+                    "id": "rare",
+                    "label": "Rare",
+                    "seconds": 480
+                },
+                {
+                    "id": "medium",
+                    "label": "Medium",
+                    "seconds": 720
+                },
+                {
+                    "id": "well-done",
+                    "label": "Well done",
+                    "seconds": 960
+                }
+            ]
+        },
+        {
+            "id": "green-beans",
+            "name": "Green Beans",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 240
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 360
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 480
+                }
+            ]
+        },
+        {
+            "id": "asparagus",
+            "name": "Asparagus",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 180
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 300
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 420
+                }
+            ]
+        },
+        {
+            "id": "sweet-potatoes",
+            "name": "Sweet Potatoes",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 1800
+                },
+                {
+                    "id": "very-soft",
+                    "label": "Very soft",
+                    "seconds": 2400
+                }
+            ]
+        },
+        {
+            "id": "beef-steak",
+            "name": "Beef Steak",
+            "category": "Meat",
+            "restSeconds": 300,
+            "defaultOptionId": "medium",
+            "options": [
+                {
+                    "id": "rare",
+                    "label": "Rare",
+                    "seconds": 360
+                },
+                {
+                    "id": "medium",
+                    "label": "Medium",
+                    "seconds": 480
+                },
+                {
+                    "id": "well-done",
+                    "label": "Well done",
+                    "seconds": 600
+                }
+            ]
+        },
+        {
+            "id": "pork-chop",
+            "name": "Pork Chop",
+            "category": "Meat",
+            "restSeconds": 300,
+            "defaultOptionId": "medium",
+            "options": [
+                {
+                    "id": "medium",
+                    "label": "Medium",
+                    "seconds": 600
+                },
+                {
+                    "id": "well-done",
+                    "label": "Well done",
+                    "seconds": 720
+                }
+            ]
+        },
+        {
+            "id": "lamb-chop",
+            "name": "Lamb Chop",
+            "category": "Meat",
+            "restSeconds": 300,
+            "defaultOptionId": "medium",
+            "options": [
+                {
+                    "id": "rare",
+                    "label": "Rare",
+                    "seconds": 300
+                },
+                {
+                    "id": "medium",
+                    "label": "Medium",
+                    "seconds": 420
+                },
+                {
+                    "id": "well-done",
+                    "label": "Well done",
+                    "seconds": 540
+                }
+            ]
+        },
+        {
+            "id": "duck-breast",
+            "name": "Duck Breast",
+            "category": "Meat",
+            "restSeconds": 300,
+            "defaultOptionId": "medium",
+            "options": [
+                {
+                    "id": "rare",
+                    "label": "Rare",
+                    "seconds": 480
+                },
+                {
+                    "id": "medium",
+                    "label": "Medium",
+                    "seconds": 600
+                },
+                {
+                    "id": "well-done",
+                    "label": "Well done",
+                    "seconds": 720
+                }
+            ]
+        },
+        {
+            "id": "turkey-breast",
+            "name": "Turkey Breast",
+            "category": "Meat",
+            "restSeconds": 900,
+            "defaultOptionId": "cooked-through",
+            "options": [
+                {
+                    "id": "cooked-through",
+                    "label": "Cooked through",
+                    "seconds": 1200
+                }
+            ]
+        },
+        {
+            "id": "tuna-steak",
+            "name": "Tuna Steak",
+            "category": "Fish",
+            "defaultOptionId": "rare",
+            "options": [
+                {
+                    "id": "rare",
+                    "label": "Rare",
+                    "seconds": 120
+                },
+                {
+                    "id": "medium",
+                    "label": "Medium",
+                    "seconds": 240
+                },
+                {
+                    "id": "well-done",
+                    "label": "Well done",
+                    "seconds": 360
+                }
+            ]
+        },
+        {
+            "id": "cod-fillet",
+            "name": "Cod Fillet",
+            "category": "Fish",
+            "defaultOptionId": "just-cooked",
+            "options": [
+                {
+                    "id": "just-cooked",
+                    "label": "Just cooked",
+                    "seconds": 600
+                }
+            ]
+        },
+        {
+            "id": "shrimp",
+            "name": "Shrimp",
+            "category": "Fish",
+            "defaultOptionId": "just-cooked",
+            "options": [
+                {
+                    "id": "just-cooked",
+                    "label": "Just cooked",
+                    "seconds": 180
+                }
+            ]
+        },
+        {
+            "id": "scallops",
+            "name": "Scallops",
+            "category": "Fish",
+            "defaultOptionId": "seared",
+            "options": [
+                {
+                    "id": "seared",
+                    "label": "Seared",
+                    "seconds": 180
+                }
+            ]
+        },
+        {
+            "id": "cauliflower",
+            "name": "Cauliflower",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 300
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 600
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 900
+                }
+            ]
+        },
+        {
+            "id": "brussels-sprouts",
+            "name": "Brussels Sprouts",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 480
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 720
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 900
+                }
+            ]
+        },
+        {
+            "id": "zucchini",
+            "name": "Zucchini",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 180
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 300
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 420
+                }
+            ]
+        },
+        {
+            "id": "eggplant",
+            "name": "Eggplant",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 600
+                },
+                {
+                    "id": "very-soft",
+                    "label": "Very soft",
+                    "seconds": 900
+                }
+            ]
+        },
+        {
+            "id": "bell-peppers",
+            "name": "Bell Peppers",
+            "category": "Vegetables",
+            "defaultOptionId": "tender",
+            "options": [
+                {
+                    "id": "crisp-tender",
+                    "label": "Crisp-tender",
+                    "seconds": 180
+                },
+                {
+                    "id": "tender",
+                    "label": "Tender",
+                    "seconds": 300
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 420
+                }
+            ]
+        },
+        {
+            "id": "quinoa",
+            "name": "Quinoa",
+            "category": "Grains",
+            "defaultOptionId": "cooked",
+            "options": [
+                {
+                    "id": "cooked",
+                    "label": "Cooked",
+                    "seconds": 900
+                }
+            ]
+        },
+        {
+            "id": "brown-rice",
+            "name": "Brown Rice",
+            "category": "Grains",
+            "defaultOptionId": "cooked",
+            "options": [
+                {
+                    "id": "cooked",
+                    "label": "Cooked",
+                    "seconds": 2400
+                }
+            ]
+        },
+        {
+            "id": "pasta-penne",
+            "name": "Pasta (Penne)",
+            "category": "Grains",
+            "defaultOptionId": "al-dente",
+            "options": [
+                {
+                    "id": "al-dente",
+                    "label": "Al dente",
+                    "seconds": 480
+                },
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 600
+                }
+            ]
+        },
+        {
+            "id": "couscous",
+            "name": "Couscous",
+            "category": "Grains",
+            "defaultOptionId": "cooked",
+            "options": [
+                {
+                    "id": "cooked",
+                    "label": "Cooked",
+                    "seconds": 420
+                }
+            ]
+        },
+        {
+            "id": "tofu",
+            "name": "Tofu",
+            "category": "Other",
+            "defaultOptionId": "crisp",
+            "options": [
+                {
+                    "id": "soft",
+                    "label": "Soft",
+                    "seconds": 300
+                },
+                {
+                    "id": "crisp",
+                    "label": "Crisp",
+                    "seconds": 600
+                }
+            ]
+        },
+        {
+            "id": "mushrooms",
+            "name": "Mushrooms",
+            "category": "Vegetables",
+            "defaultOptionId": "browned",
+            "options": [
+                {
+                    "id": "browned",
+                    "label": "Browned",
+                    "seconds": 300
+                },
+                {
+                    "id": "well-browned",
+                    "label": "Well browned",
+                    "seconds": 420
+                }
+            ]
         }
-      ]
-    },
-    {
-      "id": "potatoes",
-      "name": "Potatoes",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 1200
-        },
-        {
-          "id": "very-soft",
-          "label": "Very soft",
-          "seconds": 1500
-        }
-      ]
-    },
-    {
-      "id": "carrots",
-      "name": "Carrots",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 300
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 600
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 900
-        }
-      ]
-    },
-    {
-      "id": "kale",
-      "name": "Kale",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 180
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 360
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 540
-        }
-      ]
-    },
-    {
-      "id": "rice",
-      "name": "Rice",
-      "category": "Grains",
-      "defaultOptionId": "cooked",
-      "options": [
-        {
-          "id": "cooked",
-          "label": "Cooked",
-          "seconds": 1200
-        }
-      ]
-    },
-    {
-      "id": "broccoli",
-      "name": "Broccoli",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 180
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 300
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 420
-        }
-      ]
-    },
-    {
-      "id": "salmon",
-      "name": "Salmon",
-      "category": "Fish",
-      "defaultOptionId": "medium",
-      "options": [
-        {
-          "id": "rare",
-          "label": "Rare",
-          "seconds": 480
-        },
-        {
-          "id": "medium",
-          "label": "Medium",
-          "seconds": 720
-        },
-        {
-          "id": "well-done",
-          "label": "Well done",
-          "seconds": 960
-        }
-      ]
-    },
-    {
-      "id": "green-beans",
-      "name": "Green Beans",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 240
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 360
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 480
-        }
-      ]
-    },
-    {
-      "id": "asparagus",
-      "name": "Asparagus",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 180
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 300
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 420
-        }
-      ]
-    },
-    {
-      "id": "sweet-potatoes",
-      "name": "Sweet Potatoes",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 1800
-        },
-        {
-          "id": "very-soft",
-          "label": "Very soft",
-          "seconds": 2400
-        }
-      ]
-    },
-    {
-      "id": "beef-steak",
-      "name": "Beef Steak",
-      "category": "Meat",
-      "restSeconds": 300,
-      "defaultOptionId": "medium",
-      "options": [
-        {
-          "id": "rare",
-          "label": "Rare",
-          "seconds": 360
-        },
-        {
-          "id": "medium",
-          "label": "Medium",
-          "seconds": 480
-        },
-        {
-          "id": "well-done",
-          "label": "Well done",
-          "seconds": 600
-        }
-      ]
-    },
-    {
-      "id": "pork-chop",
-      "name": "Pork Chop",
-      "category": "Meat",
-      "restSeconds": 300,
-      "defaultOptionId": "medium",
-      "options": [
-        {
-          "id": "medium",
-          "label": "Medium",
-          "seconds": 600
-        },
-        {
-          "id": "well-done",
-          "label": "Well done",
-          "seconds": 720
-        }
-      ]
-    },
-    {
-      "id": "lamb-chop",
-      "name": "Lamb Chop",
-      "category": "Meat",
-      "restSeconds": 300,
-      "defaultOptionId": "medium",
-      "options": [
-        {
-          "id": "rare",
-          "label": "Rare",
-          "seconds": 300
-        },
-        {
-          "id": "medium",
-          "label": "Medium",
-          "seconds": 420
-        },
-        {
-          "id": "well-done",
-          "label": "Well done",
-          "seconds": 540
-        }
-      ]
-    },
-    {
-      "id": "duck-breast",
-      "name": "Duck Breast",
-      "category": "Meat",
-      "restSeconds": 300,
-      "defaultOptionId": "medium",
-      "options": [
-        {
-          "id": "rare",
-          "label": "Rare",
-          "seconds": 480
-        },
-        {
-          "id": "medium",
-          "label": "Medium",
-          "seconds": 600
-        },
-        {
-          "id": "well-done",
-          "label": "Well done",
-          "seconds": 720
-        }
-      ]
-    },
-    {
-      "id": "turkey-breast",
-      "name": "Turkey Breast",
-      "category": "Meat",
-      "restSeconds": 900,
-      "defaultOptionId": "cooked-through",
-      "options": [
-        {
-          "id": "cooked-through",
-          "label": "Cooked through",
-          "seconds": 1200
-        }
-      ]
-    },
-    {
-      "id": "tuna-steak",
-      "name": "Tuna Steak",
-      "category": "Fish",
-      "defaultOptionId": "rare",
-      "options": [
-        {
-          "id": "rare",
-          "label": "Rare",
-          "seconds": 120
-        },
-        {
-          "id": "medium",
-          "label": "Medium",
-          "seconds": 240
-        },
-        {
-          "id": "well-done",
-          "label": "Well done",
-          "seconds": 360
-        }
-      ]
-    },
-    {
-      "id": "cod-fillet",
-      "name": "Cod Fillet",
-      "category": "Fish",
-      "defaultOptionId": "just-cooked",
-      "options": [
-        {
-          "id": "just-cooked",
-          "label": "Just cooked",
-          "seconds": 600
-        }
-      ]
-    },
-    {
-      "id": "shrimp",
-      "name": "Shrimp",
-      "category": "Fish",
-      "defaultOptionId": "just-cooked",
-      "options": [
-        {
-          "id": "just-cooked",
-          "label": "Just cooked",
-          "seconds": 180
-        }
-      ]
-    },
-    {
-      "id": "scallops",
-      "name": "Scallops",
-      "category": "Fish",
-      "defaultOptionId": "seared",
-      "options": [
-        {
-          "id": "seared",
-          "label": "Seared",
-          "seconds": 180
-        }
-      ]
-    },
-    {
-      "id": "cauliflower",
-      "name": "Cauliflower",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 300
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 600
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 900
-        }
-      ]
-    },
-    {
-      "id": "brussels-sprouts",
-      "name": "Brussels Sprouts",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 480
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 720
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 900
-        }
-      ]
-    },
-    {
-      "id": "zucchini",
-      "name": "Zucchini",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 180
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 300
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 420
-        }
-      ]
-    },
-    {
-      "id": "eggplant",
-      "name": "Eggplant",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 600
-        },
-        {
-          "id": "very-soft",
-          "label": "Very soft",
-          "seconds": 900
-        }
-      ]
-    },
-    {
-      "id": "bell-peppers",
-      "name": "Bell Peppers",
-      "category": "Vegetables",
-      "defaultOptionId": "tender",
-      "options": [
-        {
-          "id": "crisp-tender",
-          "label": "Crisp-tender",
-          "seconds": 180
-        },
-        {
-          "id": "tender",
-          "label": "Tender",
-          "seconds": 300
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 420
-        }
-      ]
-    },
-    {
-      "id": "quinoa",
-      "name": "Quinoa",
-      "category": "Grains",
-      "defaultOptionId": "cooked",
-      "options": [
-        {
-          "id": "cooked",
-          "label": "Cooked",
-          "seconds": 900
-        }
-      ]
-    },
-    {
-      "id": "brown-rice",
-      "name": "Brown Rice",
-      "category": "Grains",
-      "defaultOptionId": "cooked",
-      "options": [
-        {
-          "id": "cooked",
-          "label": "Cooked",
-          "seconds": 2400
-        }
-      ]
-    },
-    {
-      "id": "pasta-penne",
-      "name": "Pasta (Penne)",
-      "category": "Grains",
-      "defaultOptionId": "al-dente",
-      "options": [
-        {
-          "id": "al-dente",
-          "label": "Al dente",
-          "seconds": 480
-        },
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 600
-        }
-      ]
-    },
-    {
-      "id": "couscous",
-      "name": "Couscous",
-      "category": "Grains",
-      "defaultOptionId": "cooked",
-      "options": [
-        {
-          "id": "cooked",
-          "label": "Cooked",
-          "seconds": 420
-        }
-      ]
-    },
-    {
-      "id": "tofu",
-      "name": "Tofu",
-      "category": "Other",
-      "defaultOptionId": "crisp",
-      "options": [
-        {
-          "id": "soft",
-          "label": "Soft",
-          "seconds": 300
-        },
-        {
-          "id": "crisp",
-          "label": "Crisp",
-          "seconds": 600
-        }
-      ]
-    },
-    {
-      "id": "mushrooms",
-      "name": "Mushrooms",
-      "category": "Vegetables",
-      "defaultOptionId": "browned",
-      "options": [
-        {
-          "id": "browned",
-          "label": "Browned",
-          "seconds": 300
-        },
-        {
-          "id": "well-browned",
-          "label": "Well browned",
-          "seconds": 420
-        }
-      ]
-    }
-  ]
+    ]
 }

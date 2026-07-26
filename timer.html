@@ -38,7 +38,7 @@
                 role="status"
             >
                 <span x-text="message"></span>
-                <button @click="dismissMessage()" class="btn btn-small">Dismiss</button>
+                <button type="button" @click="dismissMessage()" class="btn btn-small">Dismiss</button>
             </div>
 
             <!-- Main Timer Display -->
@@ -59,17 +59,17 @@
                 <!-- Timer Controls -->
                 <div class="timer-controls">
                     <template x-if="status === 'created'">
-                        <button @click="start()" class="btn btn-success btn-large">
+                        <button type="button" @click="start()" class="btn btn-success btn-large">
                             Start Cooking
                         </button>
                     </template>
                     <template x-if="status === 'running'">
-                        <button @click="pause()" class="btn btn-warning btn-large">
+                        <button type="button" @click="pause()" class="btn btn-warning btn-large">
                             Pause
                         </button>
                     </template>
                     <template x-if="status === 'paused'">
-                        <button @click="resume()" class="btn btn-success btn-large">
+                        <button type="button" @click="resume()" class="btn btn-success btn-large">
                             Resume
                         </button>
                     </template>
@@ -78,7 +78,7 @@
                             All Done! Enjoy your meal!
                         </div>
                     </template>
-                    <button @click="reset()" class="btn btn-danger" x-show="status !== 'created'">
+                    <button type="button" @click="reset()" class="btn btn-danger" x-show="status !== 'created'">
                         Reset
                     </button>
                     <a href="index.html" class="btn btn-secondary">Back to Planning</a>
@@ -96,7 +96,7 @@
             >
                 <div class="alert-content">
                     <strong x-text="currentAlert?.message"></strong>
-                    <button @click="dismissAlert()" class="btn btn-small">Dismiss</button>
+                    <button type="button" @click="dismissAlert()" class="btn btn-small">Dismiss</button>
                 </div>
             </div>
 
@@ -162,7 +162,7 @@
                         <div class="food-actions">
                             <!-- Remove button for waiting foods -->
                             <template x-if="isWaiting(item) && canEdit()">
-                                <button @click="removeFood(item.itemId)" class="btn btn-danger btn-small" :aria-label="`Remove ${item.foodName}`">
+                                <button type="button" @click="removeFood(item.itemId)" class="btn btn-danger btn-small" :aria-label="`Remove ${item.foodName}`">
                                     ✕
                                 </button>
                             </template>
@@ -173,7 +173,7 @@
 
                 <!-- Add Food Section (only when timer is running/paused) -->
                 <template x-if="canEdit() && !addingFood">
-                    <button @click="startAddingFood()" class="btn btn-primary add-food-timer-btn">
+                    <button type="button" @click="startAddingFood()" class="btn btn-primary add-food-timer-btn">
                         + Add Food
                     </button>
                 </template>
@@ -192,8 +192,8 @@
                                 <option :value="option.id" x-text="option.label"></option>
                             </template>
                         </select>
-                        <button @click="addFood()" class="btn btn-success" :disabled="!newFoodId">Add</button>
-                        <button @click="cancelAddFood()" class="btn btn-secondary">Cancel</button>
+                        <button type="button" @click="addFood()" class="btn btn-success" :disabled="!newFoodId">Add</button>
+                        <button type="button" @click="cancelAddFood()" class="btn btn-secondary">Cancel</button>
                     </div>
                 </template>
 

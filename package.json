@@ -1,10 +1,19 @@
 {
-  "name": "cooking-times",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Plan a synchronised finish for every dish.",
-  "scripts": {
-    "test": "node --test \"tests/**/*.test.js\""
-  }
+    "name": "cooking-times",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Plan a synchronised finish for every dish.",
+    "scripts": {
+        "lint": "biome check .",
+        "format": "biome check --write .",
+        "pretest": "npm run lint",
+        "test": "node --test \"tests/**/*.test.js\""
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.5"
+    },
+    "engines": {
+        "node": ">=24.18.0"
+    }
 }

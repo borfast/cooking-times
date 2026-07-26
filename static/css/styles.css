@@ -36,8 +36,16 @@ body {
     line-height: 1.6;
     color: var(--color-ink);
     background:
-        radial-gradient(1100px circle at 12% -10%, rgba(255, 107, 74, 0.24), transparent 52%),
-        radial-gradient(900px circle at 90% 0%, rgba(43, 182, 115, 0.18), transparent 48%),
+        radial-gradient(
+            1100px circle at 12% -10%,
+            rgba(255, 107, 74, 0.24),
+            transparent 52%
+        ),
+        radial-gradient(
+            900px circle at 90% 0%,
+            rgba(43, 182, 115, 0.18),
+            transparent 48%
+        ),
         linear-gradient(180deg, #f8f5f1 0%, #f1efe9 45%, #f4f7fb 100%);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -69,7 +77,11 @@ body {
     width: 3rem;
     height: 3rem;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(255, 107, 74, 0.95), rgba(244, 169, 51, 0.9));
+    background: linear-gradient(
+        135deg,
+        rgba(255, 107, 74, 0.95),
+        rgba(244, 169, 51, 0.9)
+    );
     color: #fff;
     font-size: 1.5rem;
     box-shadow: 0 16px 30px -18px rgba(255, 107, 74, 0.8);
@@ -208,7 +220,11 @@ h2 {
     bottom: 1rem;
     width: 3px;
     border-radius: 999px;
-    background: linear-gradient(180deg, var(--color-primary), rgba(255, 107, 74, 0.2));
+    background: linear-gradient(
+        180deg,
+        var(--color-primary),
+        rgba(255, 107, 74, 0.2)
+    );
 }
 
 .schedule-item strong {
@@ -249,10 +265,16 @@ select {
     background-image:
         linear-gradient(45deg, transparent 50%, rgba(15, 23, 42, 0.55) 50%),
         linear-gradient(135deg, rgba(15, 23, 42, 0.55) 50%, transparent 50%);
-    background-position: calc(100% - 1.1rem) 1.1rem, calc(100% - 0.85rem) 1.1rem;
-    background-size: 6px 6px, 6px 6px;
+    background-position:
+        calc(100% - 1.1rem) 1.1rem,
+        calc(100% - 0.85rem) 1.1rem;
+    background-size:
+        6px 6px,
+        6px 6px;
     background-repeat: no-repeat;
-    transition: border-color var(--transition), box-shadow var(--transition);
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
 }
 
 select:focus-visible,
@@ -272,7 +294,10 @@ a:focus-visible {
     justify-content: center;
     gap: 0.35rem;
     text-decoration: none;
-    transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
     box-shadow: 0 12px 22px -18px rgba(15, 23, 42, 0.45);
 }
 
@@ -294,7 +319,11 @@ a:focus-visible {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+    background: linear-gradient(
+        135deg,
+        var(--color-primary),
+        var(--color-primary-strong)
+    );
     color: #fff;
 }
 
@@ -334,6 +363,9 @@ a:focus-visible {
     font-size: 0.85rem;
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: predates the remediation and
+   renders correctly; reordering risks a visual regression for no behavioural
+   gain. */
 .btn-icon {
     width: 2.4rem;
     height: 2.4rem;
@@ -349,7 +381,12 @@ a:focus-visible {
 .countdown {
     padding: clamp(1.2rem, 3vw, 2rem);
     border-radius: var(--radius-lg);
-    background: radial-gradient(circle at top, rgba(255, 255, 255, 0.25), transparent 55%),
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(255, 255, 255, 0.25),
+            transparent 55%
+        ),
         linear-gradient(135deg, #ff6b4a, #f4a933);
     color: #fff;
     margin-bottom: 1.75rem;
@@ -363,8 +400,13 @@ a:focus-visible {
 }
 
 @keyframes flash {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.75; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.75;
+    }
 }
 
 .time-remaining {
@@ -451,7 +493,9 @@ a:focus-visible {
     border-radius: var(--radius-md);
     border: 1px solid rgba(15, 23, 42, 0.08);
     box-shadow: var(--shadow-soft);
-    transition: transform var(--transition), box-shadow var(--transition);
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition);
 }
 
 .food-timer-item.waiting {
@@ -527,8 +571,15 @@ a:focus-visible {
 }
 
 @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.25); opacity: 0.7; }
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 0.7;
+    }
 }
 
 .food-actions {
@@ -590,8 +641,14 @@ a:focus-visible {
 }
 
 @keyframes rise {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media (max-width: 900px) {
@@ -641,11 +698,14 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    /* biome-ignore-start lint/complexity/noImportantStyles: honouring a user's
+       motion preference must not be overridable by a component's own rules. */
     * {
         animation: none !important;
         transition: none !important;
         scroll-behavior: auto !important;
     }
+    /* biome-ignore-end lint/complexity/noImportantStyles: end of the block. */
 }
 
 /* G8: inline messaging, replacing blocking alert() dialogs. */
@@ -709,8 +769,16 @@ a:focus-visible {
 
     body {
         background:
-            radial-gradient(1100px circle at 12% -10%, rgba(255, 129, 99, 0.18), transparent 52%),
-            radial-gradient(900px circle at 90% 0%, rgba(62, 207, 142, 0.14), transparent 48%),
+            radial-gradient(
+                1100px circle at 12% -10%,
+                rgba(255, 129, 99, 0.18),
+                transparent 52%
+            ),
+            radial-gradient(
+                900px circle at 90% 0%,
+                rgba(62, 207, 142, 0.14),
+                transparent 48%
+            ),
             linear-gradient(180deg, #12141a 0%, #14161d 45%, #11141b 100%);
     }
 }
@@ -822,7 +890,7 @@ a:focus-visible {
     .inline-message,
     #add-food-btn,
     #start-timer-btn {
-        display: none !important;
+        display: none;
     }
 
     body {
@@ -834,5 +902,4 @@ a:focus-visible {
         box-shadow: none;
         border: 1px solid #999;
     }
-
 }

@@ -6,16 +6,19 @@
 
 /** The alerts one dish generates: going on, and coming off to rest if it rests. */
 function alertsForItem(item, triggeredAt) {
-    const isTriggered = (time) => (triggeredAt === null ? false : triggeredAt >= time);
+    const isTriggered = (time) =>
+        triggeredAt === null ? false : triggeredAt >= time;
 
-    const alerts = [{
-        type: 'food-start',
-        triggerTime: item.startTime,
-        itemId: item.itemId,
-        foodName: item.foodName,
-        message: `Time to start cooking ${item.foodName}!`,
-        triggered: isTriggered(item.startTime),
-    }];
+    const alerts = [
+        {
+            type: 'food-start',
+            triggerTime: item.startTime,
+            itemId: item.itemId,
+            foodName: item.foodName,
+            message: `Time to start cooking ${item.foodName}!`,
+            triggered: isTriggered(item.startTime),
+        },
+    ];
 
     // G25: a resting dish needs telling twice — once to put it on, once to take
     // it off. The rest happens off the heat, so this is a real action.
@@ -70,10 +73,15 @@ export function regenerateAlerts(schedule, existingAlerts, elapsedSeconds) {
     const alerts = schedule.items.flatMap((item) =>
         alertsForItem(item, elapsedSeconds).map((alert) => {
             const previous = existing.find(
-                (candidate) => candidate.type === alert.type && candidate.itemId === alert.itemId,
+                (candidate) =>
+                    candidate.type === alert.type &&
+                    candidate.itemId === alert.itemId,
             );
-            return previous ? { ...alert, triggered: previous.triggered } : alert;
-        }));
+            return previous
+                ? { ...alert, triggered: previous.triggered }
+                : alert;
+        }),
+    );
     alerts.sort(byTriggerTime);
 
     const previousFinale = existing.find((alert) => alert.type === 'all-done');

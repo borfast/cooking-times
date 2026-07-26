@@ -7,15 +7,16 @@
  * the schedule itself is always seconds from t=0.
  */
 
-import { formatTime, formatMinutes } from './format.js';
+import { formatMinutes, formatTime } from './format.js';
 
 const MINUTES_PER_DAY = 24 * 60;
 
 function asClock(minuteOfDay) {
     // Wrap so a meal counted back past midnight reads as the previous evening
     // rather than a negative time.
-    const wrapped = ((Math.round(minuteOfDay) % MINUTES_PER_DAY) + MINUTES_PER_DAY)
-        % MINUTES_PER_DAY;
+    const wrapped =
+        ((Math.round(minuteOfDay) % MINUTES_PER_DAY) + MINUTES_PER_DAY) %
+        MINUTES_PER_DAY;
     const hours = Math.floor(wrapped / 60);
     const minutes = wrapped % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
@@ -33,14 +34,20 @@ export function clockTimes(items, readyAtMinutes) {
         return null;
     }
 
-    const total = items.reduce((latest, item) => Math.max(latest, item.finishTime), 0);
+    const total = items.reduce(
+        (latest, item) => Math.max(latest, item.finishTime),
+        0,
+    );
     const clockAt = (offsetSeconds) =>
         asClock(readyAtMinutes - (total - offsetSeconds) / 60);
 
     return new Map(
         items.map((item) => [
             item.itemId,
-            { start: clockAt(item.startTime), heatOff: clockAt(item.heatOffTime) },
+            {
+                start: clockAt(item.startTime),
+                heatOff: clockAt(item.heatOffTime),
+            },
         ]),
     );
 }
@@ -53,7 +60,8 @@ export function clockTimes(items, readyAtMinutes) {
  */
 export function runsheetText(result, options) {
     const items = result.items || [];
-    const readyAt = options && options.readyAt !== undefined ? options.readyAt : null;
+    const readyAt =
+        options && options.readyAt !== undefined ? options.readyAt : null;
     const clocks = items.length > 0 ? clockTimes(items, readyAt) : null;
 
     const lines = ['Cooking running order', ''];
@@ -66,14 +74,18 @@ export function runsheetText(result, options) {
     const ordered = [...items].sort((a, b) => a.startTime - b.startTime);
 
     ordered.forEach((item, index) => {
-        const at = clocks ? clocks.get(item.itemId).start : formatTime(item.startTime);
+        const at = clocks
+            ? clocks.get(item.itemId).start
+            : formatTime(item.startTime);
         lines.push(
-            `${index + 1}. ${at}  ${item.foodName} (${item.optionLabel})`
-            + `  — ${formatMinutes(item.cookDuration)} min`,
+            `${index + 1}. ${at}  ${item.foodName} (${item.optionLabel})` +
+                `  — ${formatMinutes(item.cookDuration)} min`,
         );
 
         if (item.restSeconds > 0) {
-            const offAt = clocks ? clocks.get(item.itemId).heatOff : formatTime(item.heatOffTime);
+            const offAt = clocks
+                ? clocks.get(item.itemId).heatOff
+                : formatTime(item.heatOffTime);
             lines.push(
                 `     ${offAt}  take off the heat, rest ${formatMinutes(item.restSeconds)} min`,
             );

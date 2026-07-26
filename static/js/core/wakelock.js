@@ -24,9 +24,7 @@ export function createWakeLock(navigatorLike) {
     let sentinel = null;
     let generation = 0;
 
-    const supported = Boolean(
-        navigatorLike && navigatorLike.wakeLock && navigatorLike.wakeLock.request,
-    );
+    const supported = Boolean(navigatorLike?.wakeLock?.request);
 
     return {
         isSupported() {
@@ -50,14 +48,14 @@ export function createWakeLock(navigatorLike) {
                     // rather than resurrecting one nobody is tracking.
                     try {
                         await acquired.release();
-                    } catch (error) {
+                    } catch {
                         // Going away regardless.
                     }
                     return;
                 }
 
                 sentinel = acquired;
-            } catch (error) {
+            } catch {
                 // Browsers refuse while the page is hidden, and some refuse on
                 // low battery. Neither is worth surfacing to a cook.
                 sentinel = null;
@@ -74,7 +72,7 @@ export function createWakeLock(navigatorLike) {
             }
             try {
                 await sentinel.release();
-            } catch (error) {
+            } catch {
                 // Nothing useful to do; the lock is going away regardless.
             }
             sentinel = null;

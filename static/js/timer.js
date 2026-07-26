@@ -1,21 +1,21 @@
-import { calculateSchedule, recalculateSchedule } from './core/schedule.js';
-import { formatTime as formatDuration } from './core/format.js';
 import {
-    readPlan,
-    readSession,
-    writeSession,
+    generateAlerts,
+    partitionDueAlerts,
+    regenerateAlerts,
+    summariseMissed,
+} from './core/alerts.js';
+import { defaultOption, findFood, findOption } from './core/foods.js';
+import { formatTime as formatDuration } from './core/format.js';
+import { calculateSchedule, recalculateSchedule } from './core/schedule.js';
+import {
     clearSession,
     readCustomFoods,
     readOverrides,
+    readPlan,
+    readSession,
+    writeSession,
 } from './core/storage.js';
-import { findFood, findOption, defaultOption } from './core/foods.js';
 import { createWakeLock } from './core/wakelock.js';
-import {
-    generateAlerts,
-    regenerateAlerts,
-    partitionDueAlerts,
-    summariseMissed,
-} from './core/alerts.js';
 
 function timerApp() {
     return {
@@ -57,11 +57,16 @@ function timerApp() {
         // Computed
         get statusMessage() {
             switch (this.status) {
-                case 'created': return 'Ready to start cooking';
-                case 'running': return 'Cooking in progress...';
-                case 'paused': return 'Timer paused';
-                case 'completed': return 'All done!';
-                default: return '';
+                case 'created':
+                    return 'Ready to start cooking';
+                case 'running':
+                    return 'Cooking in progress...';
+                case 'paused':
+                    return 'Timer paused';
+                case 'completed':
+                    return 'All done!';
+                default:
+                    return '';
             }
         },
 
@@ -83,7 +88,10 @@ function timerApp() {
             // G15: browsers drop a screen lock whenever the page is hidden, so it
             // has to be taken again on the way back.
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && this.status === 'running') {
+                if (
+                    document.visibilityState === 'visible' &&
+                    this.status === 'running'
+                ) {
                     this.wakeLock.request();
                 }
             });
@@ -95,7 +103,10 @@ function timerApp() {
                 const response = await fetch('static/foods.json');
                 const data = await response.json();
                 // G24: custom foods are available mid-cook too.
-                this.availableFoods = [...data.foods, ...readCustomFoods(localStorage)];
+                this.availableFoods = [
+                    ...data.foods,
+                    ...readCustomFoods(localStorage),
+                ];
             } catch (e) {
                 console.error('Failed to load foods:', e);
             }
@@ -107,7 +118,9 @@ function timerApp() {
                 this.schedule = { items: [], totalTime: 0 };
                 this.alerts = [];
                 this.remainingSeconds = 0;
-                this.notify('No cooking schedule found. Go back to planning to build one.');
+                this.notify(
+                    'No cooking schedule found. Go back to planning to build one.',
+                );
                 return;
             }
 
@@ -136,7 +149,8 @@ function timerApp() {
                 this.startTimerLoop();
             } else if (this.status === 'paused') {
                 this.elapsedSeconds = this.pausedElapsed;
-                this.remainingSeconds = this.schedule.totalTime - this.elapsedSeconds;
+                this.remainingSeconds =
+                    this.schedule.totalTime - this.elapsedSeconds;
             } else {
                 this.remainingSeconds = this.schedule.totalTime;
             }
@@ -168,7 +182,10 @@ function timerApp() {
             if (this.status !== 'created') return;
 
             // G9: browsers penalise permission prompts not tied to a gesture.
-            if ('Notification' in window && Notification.permission === 'default') {
+            if (
+                'Notification' in window &&
+                Notification.permission === 'default'
+            ) {
                 Notification.requestPermission();
             }
 
@@ -195,7 +212,7 @@ function timerApp() {
 
             this.status = 'running';
             // Adjust startedAt to account for pause duration
-            this.startedAt = new Date(Date.now() - (this.pausedElapsed * 1000));
+            this.startedAt = new Date(Date.now() - this.pausedElapsed * 1000);
             this.lastTickSecond = null;
             this.wakeLock.request();
             this.startTimerLoop();
@@ -244,7 +261,9 @@ function timerApp() {
         updateTimer() {
             if (!this.startedAt) return;
 
-            const elapsed = Math.floor((Date.now() - this.startedAt.getTime()) / 1000);
+            const elapsed = Math.floor(
+                (Date.now() - this.startedAt.getTime()) / 1000,
+            );
 
             // G10: the loop runs at refresh rate, but nothing here changes more
             // than once a second. Bailing early keeps Alpine from re-rendering
@@ -253,7 +272,10 @@ function timerApp() {
             this.lastTickSecond = elapsed;
 
             this.elapsedSeconds = elapsed;
-            this.remainingSeconds = Math.max(0, this.schedule.totalTime - elapsed);
+            this.remainingSeconds = Math.max(
+                0,
+                this.schedule.totalTime - elapsed,
+            );
 
             this.checkAlerts();
 
@@ -279,7 +301,10 @@ function timerApp() {
 
         // Alert management
         checkAlerts() {
-            const { due, missed } = partitionDueAlerts(this.alerts, this.elapsedSeconds);
+            const { due, missed } = partitionDueAlerts(
+                this.alerts,
+                this.elapsedSeconds,
+            );
             if (!due) return;
 
             // G5: mark the backlog fired without announcing each one. Reopening
@@ -329,7 +354,9 @@ function timerApp() {
         playAlertSound() {
             // Create a simple beep sound using Web Audio API
             try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioContext = new (
+                    window.AudioContext || window.webkitAudioContext
+                )();
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
 
@@ -351,11 +378,14 @@ function timerApp() {
         },
 
         showNotification(alert) {
-            if ('Notification' in window && Notification.permission === 'granted') {
+            if (
+                'Notification' in window &&
+                Notification.permission === 'granted'
+            ) {
                 new Notification('Cooking Timer', {
                     body: alert.message,
                     tag: 'cooking-timer',
-                    requireInteraction: true
+                    requireInteraction: true,
                 });
             }
         },
@@ -368,7 +398,7 @@ function timerApp() {
                 startedAt: this.startedAt ? this.startedAt.toISOString() : null,
                 pausedElapsed: this.pausedElapsed,
                 alerts: this.alerts,
-                selectedFoods: this.selectedFoods
+                selectedFoods: this.selectedFoods,
             });
         },
 
@@ -378,12 +408,18 @@ function timerApp() {
         },
 
         isCooking(item) {
-            return this.elapsedSeconds >= item.startTime && this.elapsedSeconds < item.heatOffTime;
+            return (
+                this.elapsedSeconds >= item.startTime &&
+                this.elapsedSeconds < item.heatOffTime
+            );
         },
 
         // G25: off the heat but not yet ready to serve.
         isResting(item) {
-            return this.elapsedSeconds >= item.heatOffTime && this.elapsedSeconds < item.finishTime;
+            return (
+                this.elapsedSeconds >= item.heatOffTime &&
+                this.elapsedSeconds < item.finishTime
+            );
         },
 
         isDone(item) {
@@ -404,12 +440,18 @@ function timerApp() {
 
         // Change how a still-waiting dish is cooked. Keyed on itemId (D6).
         changeOption(itemId, newOptionId) {
-            const index = this.selectedFoods.findIndex(f => f.itemId === itemId);
+            const index = this.selectedFoods.findIndex(
+                (f) => f.itemId === itemId,
+            );
             if (index === -1) return;
 
-            const scheduleItem = this.schedule.items.find(item => item.itemId === itemId);
+            const scheduleItem = this.schedule.items.find(
+                (item) => item.itemId === itemId,
+            );
             if (scheduleItem && !this.isWaiting(scheduleItem)) {
-                this.notify('That dish has already started cooking, so its timing is locked in.');
+                this.notify(
+                    'That dish has already started cooking, so its timing is locked in.',
+                );
                 return;
             }
 
@@ -418,7 +460,8 @@ function timerApp() {
             const option = food && findOption(food, newOptionId);
             if (!option) return;
 
-            const override = readOverrides(localStorage)[`${food.id}:${option.id}`];
+            const override =
+                readOverrides(localStorage)[`${food.id}:${option.id}`];
 
             this.selectedFoods[index] = {
                 ...selection,
@@ -433,8 +476,11 @@ function timerApp() {
 
         /** The options available for a dish already on the menu. */
         optionsFor(itemId) {
-            const selection = this.selectedFoods.find(f => f.itemId === itemId);
-            const food = selection && findFood(this.availableFoods, selection.foodId);
+            const selection = this.selectedFoods.find(
+                (f) => f.itemId === itemId,
+            );
+            const food =
+                selection && findFood(this.availableFoods, selection.foodId);
             return food ? food.options : [];
         },
 
@@ -469,8 +515,10 @@ function timerApp() {
             const food = findFood(this.availableFoods, this.newFoodId);
             if (!food) return;
 
-            const option = findOption(food, this.newFoodOptionId) || defaultOption(food);
-            const override = readOverrides(localStorage)[`${food.id}:${option.id}`];
+            const option =
+                findOption(food, this.newFoodOptionId) || defaultOption(food);
+            const override =
+                readOverrides(localStorage)[`${food.id}:${option.id}`];
 
             // D6: no duplicate check. Each row has its own itemId, so a second
             // portion of the same food at a different option is legitimate.
@@ -490,24 +538,32 @@ function timerApp() {
 
         // Remove a still-waiting dish. Keyed on itemId (D6).
         removeFood(itemId) {
-            const scheduleItem = this.schedule.items.find(item => item.itemId === itemId);
+            const scheduleItem = this.schedule.items.find(
+                (item) => item.itemId === itemId,
+            );
             if (scheduleItem && !this.isWaiting(scheduleItem)) {
-                this.notify('That dish has already started cooking, so it cannot be removed.');
+                this.notify(
+                    'That dish has already started cooking, so it cannot be removed.',
+                );
                 return;
             }
 
             // G12: keep the actual selection so it can be restored verbatim,
             // rather than rebuilding it from schedule fields via a scheduleItem
             // that the guard above has already admitted might be missing.
-            const removed = this.selectedFoods.find(f => f.itemId === itemId);
+            const removed = this.selectedFoods.find((f) => f.itemId === itemId);
             if (!removed) return;
 
-            this.selectedFoods = this.selectedFoods.filter(f => f.itemId !== itemId);
+            this.selectedFoods = this.selectedFoods.filter(
+                (f) => f.itemId !== itemId,
+            );
 
             if (this.selectedFoods.length === 0) {
                 // Put it back: an empty schedule has nothing to count down to.
                 this.selectedFoods = [removed];
-                this.notify('That is the only dish left. Use Reset to start over.');
+                this.notify(
+                    'That is the only dish left. Use Reset to start over.',
+                );
                 return;
             }
 
@@ -521,8 +577,15 @@ function timerApp() {
                 this.schedule.items,
                 this.elapsedSeconds,
             );
-            this.alerts = regenerateAlerts(this.schedule, this.alerts, this.elapsedSeconds);
-            this.remainingSeconds = Math.max(0, this.schedule.totalTime - this.elapsedSeconds);
+            this.alerts = regenerateAlerts(
+                this.schedule,
+                this.alerts,
+                this.elapsedSeconds,
+            );
+            this.remainingSeconds = Math.max(
+                0,
+                this.schedule.totalTime - this.elapsedSeconds,
+            );
             this.saveSession();
         },
 

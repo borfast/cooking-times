@@ -53,7 +53,9 @@ export function clearSession(storage) {
 
 /** True when discarding this session would throw away a cook in progress. */
 export function isSessionLive(session) {
-    return session ? session.status === 'running' || session.status === 'paused' : false;
+    return session
+        ? session.status === 'running' || session.status === 'paused'
+        : false;
 }
 
 export const CUSTOM_FOODS_KEY = 'cooking-custom-foods';
