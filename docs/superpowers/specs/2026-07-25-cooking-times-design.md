@@ -228,9 +228,10 @@ Close the tab mid-cook, reopen after the meal would have finished, and the first
 
 **G10 — The UI recomputes at 60 Hz for values that change once per second.** Every visible countdown re-evaluates `formatTime` per item per frame. Harmless on a laptop; it is battery drain on the phone that is actually going to run this.
 
-**G11 — `calculateSchedule` and `formatTime` are duplicated verbatim across both JS files.** They are identical today. Nothing keeps them that way, and the scheduling rule is the one piece of logic where divergence would be silent and wrong.
+**G11 — The scheduling rule was duplicated across both JS files, and one copy of the formatter was dead.**
+`calculateSchedule` existed in both `schedule.js` and `timer.js`. The copies were logically equivalent but *not* textually identical: the planning copy guarded with `foods.length === 0` and threw on `null`, the timer copy guarded with `!foods || foods.length === 0`. `formatTime` also existed in both, but the planning page's copy was never called from anywhere — `displaySchedule` formatted inline instead. The scheduling rule is the one piece of logic where divergence would be silent and wrong. *Closed in Phase 1: both live in `static/js/core/`, the null-safe guard won, and the dead copy is gone.*
 
-**G12 — Minor:** `removeFood`'s last-food guard re-adds the food using `scheduleItem.doneness`, having already null-checked `scheduleItem` earlier in the function; if it were ever null the guard path throws. And `recalculateSchedulePreservingProgress` writes a fresh `duration` onto started items while leaving their `startTime`/`finishTime` alone, so `finishTime - startTime ≠ duration` would be reachable if the doneness guard were ever relaxed.
+**G12 — Minor:** `removeFood`'s last-food guard re-adds the food using `scheduleItem.doneness`, having already null-checked `scheduleItem` earlier in the function; if it were ever null the guard path throws. And `recalculateSchedulePreservingProgress` writes a fresh `duration` onto started items while leaving their `startTime`/`finishTime` alone, so `finishTime - startTime ≠ duration` would be reachable if the doneness guard were ever relaxed. *The second half is closed in Phase 1: the extracted `recalculateSchedule` derives a started dish's duration from the timings actually in force, and the invariant is pinned by a test. The `removeFood` null-check half remains open.*
 
 ### Design limits
 
@@ -249,7 +250,7 @@ The scheduler will happily tell you to have six things cooking at once. Real kit
 
 **G19 — No dark mode.** `color-scheme: light` is declared and no `prefers-color-scheme` rules exist.
 
-**G20 — No tests, no linting, no CI.** For 2,000 lines this is defensible; for the scheduling and recalculation logic specifically it is not. `recalculateSchedulePreservingProgress` has at least six meaningful cases and none of them are pinned.
+**G20 — No tests, no linting, no CI.** For 2,000 lines this is defensible; for the scheduling and recalculation logic specifically it is not. `recalculateSchedulePreservingProgress` has at least six meaningful cases and none of them are pinned. *Partly closed in Phase 1: `npm test` runs 24 unit tests over the scheduling core with zero installed dependencies, covering all six mid-cook cases plus the duration invariant. Linting and CI remain open.*
 
 ### Product critique
 
