@@ -9,6 +9,7 @@ import {
     readOverrides,
 } from './core/storage.js';
 import { findFood, findOption, defaultOption } from './core/foods.js';
+import { createWakeLock } from './core/wakelock.js';
 import {
     generateAlerts,
     regenerateAlerts,
@@ -41,6 +42,9 @@ function timerApp() {
         // G18: polite live-region text. Screen readers get told what changed;
         // the ticking countdown is marked aria-hidden and says nothing.
         announcement: '',
+
+        // G15: a propped-up phone sleeps, taking the display with it.
+        wakeLock: createWakeLock(navigator),
 
         // T059-T062: State for editing during timer
         availableFoods: [],
@@ -75,6 +79,14 @@ function timerApp() {
 
             // G9: notification permission is requested from start(), on a user
             // gesture. Browsers penalise prompts raised on page load.
+
+            // G15: browsers drop a screen lock whenever the page is hidden, so it
+            // has to be taken again on the way back.
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && this.status === 'running') {
+                    this.wakeLock.request();
+                }
+            });
         },
 
         // T059: Load available foods from API
@@ -120,6 +132,7 @@ function timerApp() {
 
             // Resume timer if it was running
             if (this.status === 'running') {
+                this.wakeLock.request();
                 this.startTimerLoop();
             } else if (this.status === 'paused') {
                 this.elapsedSeconds = this.pausedElapsed;
@@ -161,6 +174,7 @@ function timerApp() {
 
             this.status = 'running';
             this.startedAt = new Date();
+            this.wakeLock.request();
             this.startTimerLoop();
             this.saveSession();
         },
@@ -171,6 +185,7 @@ function timerApp() {
             this.status = 'paused';
             this.pausedElapsed = this.elapsedSeconds;
             this.stopTimerLoop();
+            this.wakeLock.release();
             this.announce('Timer paused');
             this.saveSession();
         },
@@ -182,6 +197,7 @@ function timerApp() {
             // Adjust startedAt to account for pause duration
             this.startedAt = new Date(Date.now() - (this.pausedElapsed * 1000));
             this.lastTickSecond = null;
+            this.wakeLock.request();
             this.startTimerLoop();
             this.announce('Timer resumed');
             this.saveSession();
@@ -189,6 +205,7 @@ function timerApp() {
 
         reset() {
             this.stopTimerLoop();
+            this.wakeLock.release();
             this.status = 'created';
             this.startedAt = null;
             this.pausedElapsed = 0;
@@ -255,6 +272,7 @@ function timerApp() {
         complete() {
             this.status = 'completed';
             this.stopTimerLoop();
+            this.wakeLock.release();
             this.announce('All done. Your meal is ready.');
             this.saveSession();
         },
