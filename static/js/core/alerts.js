@@ -4,16 +4,43 @@
  * worth announcing is this module's.
  */
 
-/** One alert per dish start, plus a finale for the meal. */
-export function generateAlerts(schedule) {
-    const alerts = schedule.items.map((item) => ({
+/** The alerts one dish generates: going on, and coming off to rest if it rests. */
+function alertsForItem(item, triggeredAt) {
+    const isTriggered = (time) => (triggeredAt === null ? false : triggeredAt >= time);
+
+    const alerts = [{
         type: 'food-start',
         triggerTime: item.startTime,
         itemId: item.itemId,
         foodName: item.foodName,
         message: `Time to start cooking ${item.foodName}!`,
-        triggered: false,
-    }));
+        triggered: isTriggered(item.startTime),
+    }];
+
+    // G25: a resting dish needs telling twice — once to put it on, once to take
+    // it off. The rest happens off the heat, so this is a real action.
+    if (item.restSeconds > 0) {
+        alerts.push({
+            type: 'food-rest',
+            triggerTime: item.heatOffTime,
+            itemId: item.itemId,
+            foodName: item.foodName,
+            message: `Take the ${item.foodName} off the heat to rest.`,
+            triggered: isTriggered(item.heatOffTime),
+        });
+    }
+
+    return alerts;
+}
+
+function byTriggerTime(a, b) {
+    return a.triggerTime - b.triggerTime;
+}
+
+/** One alert per dish start, one per rest, plus a finale for the meal. */
+export function generateAlerts(schedule) {
+    const alerts = schedule.items.flatMap((item) => alertsForItem(item, null));
+    alerts.sort(byTriggerTime);
 
     alerts.push({
         type: 'all-done',
@@ -40,19 +67,14 @@ export function generateAlerts(schedule) {
 export function regenerateAlerts(schedule, existingAlerts, elapsedSeconds) {
     const existing = existingAlerts || [];
 
-    const alerts = schedule.items.map((item) => {
-        const previous = existing.find(
-            (alert) => alert.type === 'food-start' && alert.itemId === item.itemId,
-        );
-        return {
-            type: 'food-start',
-            triggerTime: item.startTime,
-            itemId: item.itemId,
-            foodName: item.foodName,
-            message: `Time to start cooking ${item.foodName}!`,
-            triggered: previous ? previous.triggered : elapsedSeconds >= item.startTime,
-        };
-    });
+    const alerts = schedule.items.flatMap((item) =>
+        alertsForItem(item, elapsedSeconds).map((alert) => {
+            const previous = existing.find(
+                (candidate) => candidate.type === alert.type && candidate.itemId === alert.itemId,
+            );
+            return previous ? { ...alert, triggered: previous.triggered } : alert;
+        }));
+    alerts.sort(byTriggerTime);
 
     const previousFinale = existing.find((alert) => alert.type === 'all-done');
     alerts.push({

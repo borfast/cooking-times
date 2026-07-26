@@ -93,6 +93,7 @@
                 <template x-for="item in schedule.items" :key="item.itemId">
                     <div class="food-timer-item" :class="{
                         'cooking': isCooking(item),
+                        'resting': isResting(item),
                         'waiting': isWaiting(item),
                         'done': isDone(item),
                         'editing': editingFood === item.itemId
@@ -128,7 +129,17 @@
                             </template>
                             <template x-if="isCooking(item)">
                                 <span class="cooking-time">
-                                    Done in: <strong x-text="formatTime(item.finishTime - elapsedSeconds)"></strong>
+                                    <template x-if="item.restSeconds > 0">
+                                        <span>Off the heat in: <strong x-text="formatTime(item.heatOffTime - elapsedSeconds)"></strong></span>
+                                    </template>
+                                    <template x-if="item.restSeconds === 0">
+                                        <span>Done in: <strong x-text="formatTime(item.finishTime - elapsedSeconds)"></strong></span>
+                                    </template>
+                                </span>
+                            </template>
+                            <template x-if="isResting(item)">
+                                <span class="resting-time">
+                                    Resting, ready in <strong x-text="formatTime(item.finishTime - elapsedSeconds)"></strong>
                                 </span>
                             </template>
                             <template x-if="isDone(item)">

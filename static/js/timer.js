@@ -340,7 +340,12 @@ function timerApp() {
         },
 
         isCooking(item) {
-            return this.elapsedSeconds >= item.startTime && this.elapsedSeconds < item.finishTime;
+            return this.elapsedSeconds >= item.startTime && this.elapsedSeconds < item.heatOffTime;
+        },
+
+        // G25: off the heat but not yet ready to serve.
+        isResting(item) {
+            return this.elapsedSeconds >= item.heatOffTime && this.elapsedSeconds < item.finishTime;
         },
 
         isDone(item) {

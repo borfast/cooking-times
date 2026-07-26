@@ -863,3 +863,14 @@ a:focus-visible {
         align-items: stretch;
     }
 }
+
+/* G25: off the heat, not yet ready. */
+.food-timer-item.resting {
+    border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
+    background: color-mix(in srgb, var(--color-warning) 8%, var(--color-panel-strong));
+}
+
+.resting-time {
+    color: var(--color-warning);
+    font-weight: 600;
+}

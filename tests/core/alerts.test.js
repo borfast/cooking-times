@@ -168,3 +168,47 @@ test('regenerateAlerts keeps a same-named waiting dish unfired', () => {
   assert.equal(next.find((alert) => alert.itemId === 'a').triggered, true);
   assert.equal(next.find((alert) => alert.itemId === 'b').triggered, false);
 });
+
+const restingSchedule = {
+  totalTime: 780,
+  items: [
+    { itemId: 'r0', foodId: 'beef-steak', foodName: 'Beef Steak', optionLabel: 'Medium',
+      startTime: 0, cookDuration: 480, heatOffTime: 480, restSeconds: 300, finishTime: 780 },
+    { itemId: 'r1', foodId: 'broccoli', foodName: 'Broccoli', optionLabel: 'Tender',
+      startTime: 480, cookDuration: 300, heatOffTime: 780, restSeconds: 0, finishTime: 780 },
+  ],
+};
+
+test('a resting dish gets a second alert for coming off the heat', () => {
+  const alerts = generateAlerts(restingSchedule);
+
+  const steakAlerts = alerts.filter((alert) => alert.itemId === 'r0');
+  assert.deepEqual(
+    steakAlerts.map((alert) => [alert.type, alert.triggerTime]),
+    [
+      ['food-start', 0],
+      ['food-rest', 480],
+    ],
+  );
+  assert.match(steakAlerts[1].message, /off the heat/i);
+  assert.match(steakAlerts[1].message, /Beef Steak/);
+});
+
+test('a dish with no rest gets only a start alert', () => {
+  const alerts = generateAlerts(restingSchedule).filter((alert) => alert.itemId === 'r1');
+  assert.deepEqual(alerts.map((alert) => alert.type), ['food-start']);
+});
+
+test('alerts stay in trigger order so the backlog summary reads correctly', () => {
+  const times = generateAlerts(restingSchedule).map((alert) => alert.triggerTime);
+  assert.deepEqual(times, [...times].sort((a, b) => a - b));
+});
+
+test('regenerateAlerts preserves a fired off-the-heat alert', () => {
+  const existing = generateAlerts(restingSchedule);
+  existing.find((alert) => alert.type === 'food-rest').triggered = true;
+
+  const next = regenerateAlerts(restingSchedule, existing, 500);
+
+  assert.equal(next.find((alert) => alert.type === 'food-rest').triggered, true);
+});
