@@ -72,6 +72,7 @@ test('a food with one option still resolves', () => {
     optionLabel: 'Cooked',
     cookingTime: 1200,
     overridden: false,
+    restSeconds: 0,
   });
 });
 
@@ -170,4 +171,35 @@ test('the shipped catalogue exercises one, two and three option foods', () => {
 
   // G22 was that every food was forced to have exactly three tiers.
   assert.deepEqual([...counts].sort(), [1, 2, 3]);
+});
+
+test('resolveSelection carries the food rest, defaulting to zero', () => {
+  const withRest = [{
+    id: 'beef-steak',
+    name: 'Beef Steak',
+    category: 'Meat',
+    restSeconds: 300,
+    defaultOptionId: 'medium',
+    options: [{ id: 'medium', label: 'Medium', seconds: 480 }],
+  }];
+
+  assert.equal(
+    resolveSelection(withRest, { itemId: 'i1', foodId: 'beef-steak' }).restSeconds,
+    300,
+  );
+  assert.equal(resolveSelection(catalogue, { itemId: 'i1', foodId: 'rice' }).restSeconds, 0);
+});
+
+test('the shipped catalogue rests meat and nothing else', () => {
+  const raw = readFileSync(new URL('../../static/foods.json', import.meta.url), 'utf8');
+  const foods = JSON.parse(raw).foods;
+
+  const resting = foods.filter((food) => food.restSeconds > 0).map((food) => food.id).sort();
+  assert.deepEqual(resting, [
+    'beef-steak', 'chicken', 'duck-breast', 'lamb-chop', 'pork-chop', 'turkey-breast',
+  ]);
+
+  for (const food of foods.filter((f) => f.category !== 'Meat')) {
+    assert.ok(!food.restSeconds, `${food.id} should not rest`);
+  }
 });

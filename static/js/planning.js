@@ -299,7 +299,10 @@ function displaySchedule(schedule) {
                     Start at: ${formatTime(item.startTime)}
                     ${intervalText}
                 </div>
-                <div class="time">Cook for: ${formatMinutes(item.duration)} minutes</div>
+                <div class="time">Cook for: ${formatMinutes(item.cookDuration)} minutes</div>
+                ${item.restSeconds > 0
+                    ? `<div class="time">Off the heat at ${formatTime(item.heatOffTime)}, then rest ${formatMinutes(item.restSeconds)} min</div>`
+                    : ''}
             </div>
         `;
     });

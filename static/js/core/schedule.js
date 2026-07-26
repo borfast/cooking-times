@@ -4,15 +4,34 @@
  * Every time in this module is an integer number of seconds measured from
  * t=0, the moment cooking starts. Nothing here knows about wall-clock time.
  *
- * Schedule item shape: { itemId, foodId, foodName, optionLabel, startTime, duration, finishTime }
- * Selection shape:     { itemId, foodId, foodName, optionId, optionLabel, cookingTime }
+ * A dish has two phases: time on the heat, then an optional rest off it.
+ *
+ * Schedule item shape: {
+ *   itemId, foodId, foodName, optionLabel,
+ *   startTime,      // goes on the heat
+ *   cookDuration,   // time on the heat
+ *   heatOffTime,    // comes off the heat
+ *   restSeconds,    // resting off the heat (0 for most foods)
+ *   finishTime,     // ready to serve
+ * }
+ * Selection shape: { itemId, foodId, foodName, optionId, optionLabel, cookingTime, restSeconds }
  *
  * `itemId` is the identity, never `foodId` — two portions of the same food at
  * different options are a legitimate menu.
  *
- * Invariant, guaranteed for every item returned by every function here:
- *   finishTime - startTime === duration
+ * Invariants, guaranteed for every item returned by every function here:
+ *   heatOffTime - startTime === cookDuration
+ *   finishTime  - heatOffTime === restSeconds
+ *
+ * Only [startTime, heatOffTime) occupies a burner. A resting dish occupies none,
+ * which is why the rest is modelled separately rather than folded into the cook
+ * time — see core/capacity.js.
  */
+
+/** Seconds from going on the heat to being ready to serve. */
+function readyTime(selection) {
+    return selection.cookingTime + (selection.restSeconds || 0);
+}
 
 function byStartTime(a, b) {
     return a.startTime - b.startTime;
@@ -29,17 +48,23 @@ export function calculateSchedule(selections) {
         return { items: [], totalTime: 0 };
     }
 
-    const totalTime = Math.max(...selections.map((selection) => selection.cookingTime));
+    const totalTime = Math.max(...selections.map(readyTime));
 
-    const items = selections.map((selection) => ({
-        itemId: selection.itemId,
-        foodId: selection.foodId,
-        foodName: selection.foodName,
-        optionLabel: selection.optionLabel,
-        startTime: totalTime - selection.cookingTime,
-        duration: selection.cookingTime,
-        finishTime: totalTime,
-    }));
+    const items = selections.map((selection) => {
+        const rest = selection.restSeconds || 0;
+        const heatOffTime = totalTime - rest;
+        return {
+            itemId: selection.itemId,
+            foodId: selection.foodId,
+            foodName: selection.foodName,
+            optionLabel: selection.optionLabel,
+            startTime: heatOffTime - selection.cookingTime,
+            cookDuration: selection.cookingTime,
+            heatOffTime,
+            restSeconds: rest,
+            finishTime: totalTime,
+        };
+    });
 
     items.sort(byStartTime);
 
@@ -86,7 +111,7 @@ export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
         totalTime = Math.max(totalTime, inForce.finishTime);
     }
     if (waiting.length > 0) {
-        const slowest = Math.max(...waiting.map((selection) => selection.cookingTime));
+        const slowest = Math.max(...waiting.map(readyTime));
         totalTime = Math.max(totalTime, elapsedSeconds + slowest);
     }
 
@@ -96,25 +121,33 @@ export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
             foodId: selection.foodId,
             foodName: selection.foodName,
             optionLabel: selection.optionLabel,
+            // All four timings come from the plan in force, not the selection,
+            // so both invariants hold even if a caller ever changes the option
+            // of an already-started dish.
             startTime: inForce.startTime,
-            // Derived from the timings actually in force rather than from the
-            // selection's cookingTime, so the duration invariant holds even if
-            // a caller ever changes the option of an already-started dish.
-            duration: inForce.finishTime - inForce.startTime,
+            cookDuration: inForce.heatOffTime - inForce.startTime,
+            heatOffTime: inForce.heatOffTime,
+            restSeconds: inForce.restSeconds,
             finishTime: inForce.finishTime,
         })),
-        ...waiting.map((selection) => ({
-            itemId: selection.itemId,
-            foodId: selection.foodId,
-            foodName: selection.foodName,
-            optionLabel: selection.optionLabel,
-            // The clamp is currently unreachable: totalTime is at least
-            // elapsedSeconds + slowest, and cookingTime <= slowest. Kept as a
-            // guard because Phase 4 changes how totalTime is chosen.
-            startTime: Math.max(totalTime - selection.cookingTime, elapsedSeconds),
-            duration: selection.cookingTime,
-            finishTime: totalTime,
-        })),
+        ...waiting.map((selection) => {
+            const rest = selection.restSeconds || 0;
+            const heatOffTime = totalTime - rest;
+            return {
+                itemId: selection.itemId,
+                foodId: selection.foodId,
+                foodName: selection.foodName,
+                optionLabel: selection.optionLabel,
+                // The clamp is currently unreachable: totalTime is at least
+                // elapsedSeconds + the slowest ready time, and this dish's ready
+                // time is at most that. Kept as a guard.
+                startTime: Math.max(heatOffTime - selection.cookingTime, elapsedSeconds),
+                cookDuration: selection.cookingTime,
+                heatOffTime,
+                restSeconds: rest,
+                finishTime: totalTime,
+            };
+        }),
     ];
 
     items.sort(byStartTime);

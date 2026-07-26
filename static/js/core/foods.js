@@ -6,7 +6,7 @@
  * naming. Option counts of one, two and three are all normal.
  *
  * Food:      { id, name, category, defaultOptionId, options: [ { id, label, seconds } ] }
- * Selection: { itemId, foodId, foodName, optionId, optionLabel, cookingTime, overridden }
+ * Selection: { itemId, foodId, foodName, optionId, optionLabel, cookingTime, overridden, restSeconds }
  */
 
 export function findFood(catalogue, foodId) {
@@ -56,6 +56,10 @@ export function resolveSelection(catalogue, row) {
         optionLabel: option.label,
         cookingTime: override === null ? option.seconds : override,
         overridden: override !== null,
+        // D4: rest is declared per food, not per option. A resting dish is off
+        // the heat for this long before it is ready to serve.
+        restSeconds:
+            Number.isInteger(food.restSeconds) && food.restSeconds > 0 ? food.restSeconds : 0,
     };
 }
 

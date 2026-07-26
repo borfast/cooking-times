@@ -4,6 +4,7 @@
       "id": "chicken",
       "name": "Chicken",
       "category": "Meat",
+      "restSeconds": 600,
       "defaultOptionId": "cooked-through",
       "options": [
         {
@@ -204,6 +205,7 @@
       "id": "beef-steak",
       "name": "Beef Steak",
       "category": "Meat",
+      "restSeconds": 300,
       "defaultOptionId": "medium",
       "options": [
         {
@@ -227,6 +229,7 @@
       "id": "pork-chop",
       "name": "Pork Chop",
       "category": "Meat",
+      "restSeconds": 300,
       "defaultOptionId": "medium",
       "options": [
         {
@@ -245,6 +248,7 @@
       "id": "lamb-chop",
       "name": "Lamb Chop",
       "category": "Meat",
+      "restSeconds": 300,
       "defaultOptionId": "medium",
       "options": [
         {
@@ -268,6 +272,7 @@
       "id": "duck-breast",
       "name": "Duck Breast",
       "category": "Meat",
+      "restSeconds": 300,
       "defaultOptionId": "medium",
       "options": [
         {
@@ -291,6 +296,7 @@
       "id": "turkey-breast",
       "name": "Turkey Breast",
       "category": "Meat",
+      "restSeconds": 900,
       "defaultOptionId": "cooked-through",
       "options": [
         {

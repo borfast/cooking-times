@@ -34,7 +34,9 @@ test('a single dish starts at zero and sets the total', () => {
       foodName: 'kale',
       optionLabel: 'Medium',
       startTime: 0,
-      duration: 360,
+      cookDuration: 360,
+      heatOffTime: 360,
+      restSeconds: 0,
       finishTime: 360,
     },
   ]);
@@ -80,7 +82,7 @@ test('equally long dishes both start at zero', () => {
   );
 });
 
-test('every item satisfies finishTime - startTime === duration', () => {
+test('every item satisfies finishTime - startTime === cookDuration', () => {
   const result = calculateSchedule([
     sel('shrimp', 120),
     sel('brown-rice', 2700),
@@ -88,7 +90,7 @@ test('every item satisfies finishTime - startTime === duration', () => {
   ]);
 
   for (const item of result.items) {
-    assert.equal(item.finishTime - item.startTime, item.duration);
+    assert.equal(item.finishTime - item.startTime, item.cookDuration);
   }
 });
 
@@ -160,7 +162,9 @@ test('a started dish keeps its timings when a waiting dish is removed', () => {
       foodName: 'chicken',
       optionLabel: 'Medium',
       startTime: 0,
-      duration: 1500,
+      cookDuration: 1500,
+      heatOffTime: 1500,
+      restSeconds: 0,
       finishTime: 1500,
     },
   ]);
@@ -181,7 +185,7 @@ test('shortening a waiting dish never pulls the finish earlier than a started di
   const kale = after.items.find((item) => item.foodId === 'kale');
   assert.equal(kale.startTime, 1320);
   assert.equal(kale.optionLabel, 'Crisp-tender');
-  assert.equal(kale.duration, 180);
+  assert.equal(kale.cookDuration, 180);
 });
 
 test('no dish is ever scheduled to start in the past', () => {
@@ -215,7 +219,7 @@ test('recalculateSchedule preserves the duration invariant', () => {
   const after = recalculateSchedule([...original, sel('brown-rice', 2700)], current, 600);
 
   for (const item of after.items) {
-    assert.equal(item.finishTime - item.startTime, item.duration);
+    assert.equal(item.finishTime - item.startTime, item.cookDuration);
   }
 });
 
@@ -261,4 +265,80 @@ test('recalculateSchedule distinguishes two portions of the same food', () => {
   assert.equal(wellAfter.startTime, 0);
   assert.equal(rareAfter.startTime, 240);
   assert.equal(after.totalTime, 600);
+});
+
+const restingSel = (foodId, cookingTime, restSeconds, optionLabel = 'Medium') => ({
+  ...sel(foodId, cookingTime, optionLabel),
+  restSeconds,
+});
+
+test('a resting dish comes off the heat before it is ready', () => {
+  const result = calculateSchedule([restingSel('beef-steak', 480, 300)]);
+
+  assert.equal(result.totalTime, 780);
+  assert.deepEqual(result.items[0], {
+    itemId: result.items[0].itemId,
+    foodId: 'beef-steak',
+    foodName: 'beef-steak',
+    optionLabel: 'Medium',
+    startTime: 0,
+    cookDuration: 480,
+    heatOffTime: 480,
+    restSeconds: 300,
+    finishTime: 780,
+  });
+});
+
+test('resting counts towards the total, so a resting dish goes on first', () => {
+  // Steak cooks 8 min then rests 5 = 13 min to ready. Broccoli cooks 5, no rest.
+  const result = calculateSchedule([
+    restingSel('beef-steak', 480, 300),
+    restingSel('broccoli', 300, 0),
+  ]);
+
+  assert.equal(result.totalTime, 780);
+
+  const steak = result.items.find((item) => item.foodId === 'beef-steak');
+  const broccoli = result.items.find((item) => item.foodId === 'broccoli');
+
+  assert.equal(steak.startTime, 0);
+  assert.equal(steak.heatOffTime, 480);
+  assert.equal(broccoli.startTime, 480);
+  assert.equal(broccoli.heatOffTime, 780);
+  // The steak is off the heat before the broccoli goes on — they never compete.
+  assert.ok(steak.heatOffTime <= broccoli.startTime);
+});
+
+test('every item satisfies both phase invariants', () => {
+  const result = calculateSchedule([
+    restingSel('beef-steak', 480, 300),
+    restingSel('chicken', 1500, 600),
+    restingSel('kale', 360, 0),
+  ]);
+
+  for (const item of result.items) {
+    assert.equal(item.heatOffTime - item.startTime, item.cookDuration);
+    assert.equal(item.finishTime - item.heatOffTime, item.restSeconds);
+    assert.equal(item.finishTime, result.totalTime);
+  }
+});
+
+test('a missing restSeconds is treated as no rest', () => {
+  const result = calculateSchedule([sel('kale', 360)]);
+  assert.equal(result.items[0].restSeconds, 0);
+  assert.equal(result.items[0].heatOffTime, result.items[0].finishTime);
+});
+
+test('recalculateSchedule preserves a started dish rest and both invariants', () => {
+  const original = [restingSel('beef-steak', 480, 300), restingSel('kale', 360, 0)];
+  const current = calculateSchedule(original).items;
+
+  const after = recalculateSchedule([...original, restingSel('rice', 1200, 0)], current, 200);
+
+  const steak = after.items.find((item) => item.foodId === 'beef-steak');
+  assert.equal(steak.restSeconds, 300);
+  for (const item of after.items) {
+    assert.equal(item.heatOffTime - item.startTime, item.cookDuration);
+    assert.equal(item.finishTime - item.heatOffTime, item.restSeconds);
+  }
 });
