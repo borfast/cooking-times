@@ -647,3 +647,32 @@ a:focus-visible {
         scroll-behavior: auto !important;
     }
 }
+
+/* G8: inline messaging, replacing blocking alert() dialogs. */
+.inline-message {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    background: var(--color-panel);
+    box-shadow: var(--shadow-soft);
+    font-weight: 500;
+}
+
+.inline-message[hidden] {
+    display: none;
+}
+
+.inline-message--error {
+    border-color: color-mix(in srgb, var(--color-danger) 45%, transparent);
+    color: var(--color-danger);
+}
+
+.inline-message--notice {
+    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    color: var(--color-primary-strong);
+}

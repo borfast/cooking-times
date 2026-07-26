@@ -1,10 +1,30 @@
 import { calculateSchedule } from './core/schedule.js';
 import { formatTime, formatMinutes } from './core/format.js';
+import {
+    readPlan,
+    writePlan,
+    readSession,
+    clearSession,
+    isSessionLive,
+} from './core/storage.js';
 
 let foods = [];
 let selectedFoods = [];
 let foodCounter = 0;
-const STORAGE_KEY = 'cooking-schedule';
+
+// G8: inline messaging instead of blocking alert() dialogs.
+function showMessage(text, tone = 'error') {
+    const region = document.getElementById('planning-message');
+    region.textContent = text;
+    region.className = `inline-message inline-message--${tone}`;
+    region.hidden = false;
+}
+
+function clearMessage() {
+    const region = document.getElementById('planning-message');
+    region.hidden = true;
+    region.textContent = '';
+}
 
 // Load foods from API
 async function loadFoods() {
@@ -15,7 +35,7 @@ async function loadFoods() {
         restoreFoodSelectors();
     } catch (error) {
         console.error('Failed to load foods:', error);
-        alert('Failed to load food database. Please refresh the page.');
+        showMessage('Could not load the food list. Check your connection and reload.');
     }
 }
 
@@ -93,19 +113,7 @@ function addFoodSelector(selectedFoodId = '', selectedDoneness = 'medium') {
 }
 
 function restoreFoodSelectors() {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    let savedFoods = [];
-
-    if (stored) {
-        try {
-            const data = JSON.parse(stored);
-            if (Array.isArray(data.selectedFoods)) {
-                savedFoods = data.selectedFoods;
-            }
-        } catch (error) {
-            console.warn('Failed to parse saved schedule:', error);
-        }
-    }
+    const savedFoods = readPlan(localStorage);
 
     if (savedFoods.length === 0) {
         addFoodSelector();
@@ -121,30 +129,51 @@ function restoreFoodSelectors() {
 // Update schedule display
 function updateSchedule() {
     const foodItems = document.querySelectorAll('.food-item');
+    const seen = new Set();
+    const duplicates = new Set();
     selectedFoods = [];
 
     foodItems.forEach(item => {
-        const foodSelect = item.querySelector('.food-select');
-        const donenessSelect = item.querySelector('.doneness-select');
-        const foodId = foodSelect.value;
-        const doneness = donenessSelect.value;
-
-        if (foodId) {
-            const food = foods.find(f => f.id === foodId);
-            if (food) {
-                selectedFoods.push({
-                    foodId: foodId,
-                    foodName: food.name,
-                    doneness: doneness,
-                    cookingTime: food.cookingTimes[doneness]
-                });
-            }
+        const foodId = item.querySelector('.food-select').value;
+        const doneness = item.querySelector('.doneness-select').value;
+        if (!foodId) {
+            return;
         }
+
+        const food = foods.find(f => f.id === foodId);
+        if (!food) {
+            return;
+        }
+
+        // G3: the timer identifies dishes by foodId, so two rows of the same
+        // food would collide there and in Alpine's x-for keys.
+        if (seen.has(foodId)) {
+            duplicates.add(food.name);
+            return;
+        }
+        seen.add(foodId);
+
+        selectedFoods.push({
+            foodId: foodId,
+            foodName: food.name,
+            doneness: doneness,
+            cookingTime: food.cookingTimes[doneness]
+        });
     });
 
+    if (duplicates.size > 0) {
+        showMessage(
+            `Already on the menu: ${[...duplicates].join(', ')}. Remove the duplicate row.`,
+        );
+    } else {
+        clearMessage();
+    }
+
+    // G7: persist on every change, not only when the timer starts.
+    writePlan(localStorage, selectedFoods);
+
     if (selectedFoods.length > 0) {
-        const schedule = calculateSchedule(selectedFoods);
-        displaySchedule(schedule);
+        displaySchedule(calculateSchedule(selectedFoods));
     } else {
         document.getElementById('schedule-section').style.display = 'none';
     }
@@ -185,14 +214,21 @@ function displaySchedule(schedule) {
 document.getElementById('add-food-btn').addEventListener('click', addFoodSelector);
 
 document.getElementById('start-timer-btn').addEventListener('click', () => {
-    // Save schedule to localStorage and navigate to timer page
-    localStorage.setItem('cooking-schedule', JSON.stringify({
-        items: selectedFoods.map(f => ({
-            ...f,
-            startTime: 0 // Will be calculated in timer
-        })),
-        selectedFoods: selectedFoods
-    }));
+    // G1: the timer prefers a saved session over a saved plan, so a stale
+    // session would silently mask this new plan. D5: replacing a finished or
+    // unstarted session is silent; replacing a cook in progress is not.
+    const session = readSession(localStorage);
+    if (isSessionLive(session)) {
+        const discard = window.confirm(
+            'A cook is already in progress. Start this new plan and discard it?',
+        );
+        if (!discard) {
+            return;
+        }
+    }
+
+    writePlan(localStorage, selectedFoods);
+    clearSession(localStorage);
     window.location.href = 'timer.html';
 });
 
