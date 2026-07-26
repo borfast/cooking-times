@@ -41,3 +41,77 @@ export function calculateSchedule(selections) {
 
     return { items, totalTime };
 }
+
+/**
+ * Re-plan around dishes that have already started.
+ *
+ * Dishes already on the heat are immovable: they keep the start and finish
+ * they were given. Everything else re-targets a common finish, chosen to be
+ * late enough for both the immovable dishes and the slowest dish still waiting.
+ *
+ * Two consequences worth knowing, both intentional:
+ *  - Adding a slow dish pushes the finish later, so dishes already cooking
+ *    finish before the meal does.
+ *  - Removing or shortening a waiting dish cannot pull the finish earlier than
+ *    the last immovable dish.
+ *
+ * @param selections     the full desired list after the edit
+ * @param currentItems   the schedule in force before the edit
+ * @param elapsedSeconds seconds since cooking started
+ */
+export function recalculateSchedule(selections, currentItems, elapsedSeconds) {
+    if (!selections || selections.length === 0) {
+        return { items: [], totalTime: 0 };
+    }
+
+    const current = currentItems || [];
+    const started = [];
+    const waiting = [];
+
+    for (const selection of selections) {
+        const inForce = current.find((item) => item.foodId === selection.foodId);
+        if (inForce && elapsedSeconds >= inForce.startTime) {
+            started.push({ selection, inForce });
+        } else {
+            waiting.push(selection);
+        }
+    }
+
+    let totalTime = 0;
+    for (const { inForce } of started) {
+        totalTime = Math.max(totalTime, inForce.finishTime);
+    }
+    if (waiting.length > 0) {
+        const slowest = Math.max(...waiting.map((selection) => selection.cookingTime));
+        totalTime = Math.max(totalTime, elapsedSeconds + slowest);
+    }
+
+    const items = [
+        ...started.map(({ selection, inForce }) => ({
+            foodId: selection.foodId,
+            foodName: selection.foodName,
+            doneness: selection.doneness,
+            startTime: inForce.startTime,
+            // Derived from the timings actually in force rather than from the
+            // selection's cookingTime, so the duration invariant holds even if
+            // a caller ever changes the doneness of an already-started dish.
+            duration: inForce.finishTime - inForce.startTime,
+            finishTime: inForce.finishTime,
+        })),
+        ...waiting.map((selection) => ({
+            foodId: selection.foodId,
+            foodName: selection.foodName,
+            doneness: selection.doneness,
+            // The clamp is currently unreachable: totalTime is at least
+            // elapsedSeconds + slowest, and cookingTime <= slowest. Kept as a
+            // guard because Phase 4 changes how totalTime is chosen.
+            startTime: Math.max(totalTime - selection.cookingTime, elapsedSeconds),
+            duration: selection.cookingTime,
+            finishTime: totalTime,
+        })),
+    ];
+
+    items.sort(byStartTime);
+
+    return { items, totalTime };
+}
