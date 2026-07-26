@@ -1,0 +1,10 @@
+{
+  "name": "cooking-times",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Plan a synchronised finish for every dish.",
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.js\""
+  }
+}

@@ -12,7 +12,8 @@
 
 - **Zero new dependencies.** `package.json` must have no `dependencies` or `devDependencies`. Node's built-in test runner only.
 - **No user-visible behaviour change in this phase.** Every gap other than G11 and G20 stays open until Phase 2.
-- **Node version floor:** 24.18.0 (present). Requires `node --test` with glob support.
+- **Node version floor:** 24.18.0 (present). The test command must be `node --test "tests/**/*.test.js"`. The directory form `node --test tests/` is broken on Node 24 — it resolves the directory as a module entry point and dies with `MODULE_NOT_FOUND`.
+- **Node 24 auto-detects ES module syntax in `.js` files**, so `"type": "module"` is not required for tests to run. It is declared anyway, to state the intent rather than rely on syntax detection.
 - **All times are integer seconds** relative to `t=0`, the moment cooking starts. Never wall-clock, never milliseconds, never floats.
 - **Schedule item shape is fixed:** `{ foodId, foodName, doneness, startTime, duration, finishTime }`. Phase 3 changes `doneness`; do not change it here.
 - **Selection shape is fixed:** `{ foodId, foodName, doneness, cookingTime }`.
@@ -23,7 +24,7 @@
 
 | File | Responsibility |
 | --- | --- |
-| `package.json` | *Create.* Declares `"type": "module"` so Node treats `.js` as ESM, and the `test` script. No dependencies. |
+| `package.json` | *Create.* Declares the `test` script and, for explicitness, `"type": "module"`. No dependencies. |
 | `static/js/core/format.js` | *Create.* Duration → display string. Two exports, no state, no DOM. |
 | `static/js/core/schedule.js` | *Create.* The scheduling rule and the mid-cook re-plan. Two exports, no state, no DOM, no `Date`. |
 | `tests/core/format.test.js` | *Create.* Unit tests for formatting, including the negative-clamp case the two old copies disagreed on. |
@@ -58,11 +59,15 @@ test('test runner executes ES modules', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [ ] **Step 2: Confirm the runner works, and learn the correct invocation**
 
-Run: `node --test tests/`
+Run: `node --test "tests/**/*.test.js"`
 
-Expected: FAIL. Without `package.json` declaring `"type": "module"`, Node parses `.js` as CommonJS and reports `SyntaxError: Cannot use import statement outside a module`.
+Expected: PASS, `1 pass  0 fail`.
+
+There is no RED step here, and it is worth being explicit about why. Node 24 auto-detects ES module syntax in `.js` files, so this test passes with no `package.json` present at all. Task 1 is scaffolding, not behaviour — the thing being verified is that the runner exists and executes ESM, which is true before any file is written. The genuine RED/GREEN cycles start at Task 2.
+
+Do **not** use `node --test tests/`. On Node 24 that resolves `tests` as a module entry point and dies with `MODULE_NOT_FOUND`, which looks exactly like a broken test file.
 
 - [ ] **Step 3: Add the manifest**
 
@@ -76,12 +81,14 @@ Create `package.json`:
   "type": "module",
   "description": "Plan a synchronised finish for every dish.",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test \"tests/**/*.test.js\""
   }
 }
 ```
 
-- [ ] **Step 4: Run it and watch it pass**
+`"type": "module"` is declared to state the intent explicitly rather than depend on syntax detection; it is not what makes the tests run.
+
+- [ ] **Step 4: Confirm `npm test` works**
 
 Run: `npm test`
 
