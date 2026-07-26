@@ -45,26 +45,14 @@ export function clockTimes(items, readyAtMinutes) {
     );
 }
 
-/** How a moved dish should be described in the run sheet. */
-function movedSuffix(moved) {
-    if (!moved) {
-        return '';
-    }
-    if (moved.finishesEarlyBy) {
-        return `  (moved earlier — ready ${formatMinutes(moved.finishesEarlyBy)} min before the rest)`;
-    }
-    return `  (moved later — ready ${formatMinutes(moved.finishesLateBy)} min after the rest)`;
-}
-
 /**
  * The running order as plain text, ready for a clipboard or a printout.
  *
- * @param result  the applyStrategy shape: { items, totalTime, moved }
+ * @param result  a schedule: { items, totalTime }
  * @param options { readyAt } — minute-of-day, or null for offsets from the start
  */
 export function runsheetText(result, options) {
     const items = result.items || [];
-    const moved = result.moved || [];
     const readyAt = options && options.readyAt !== undefined ? options.readyAt : null;
     const clocks = items.length > 0 ? clockTimes(items, readyAt) : null;
 
@@ -79,11 +67,9 @@ export function runsheetText(result, options) {
 
     ordered.forEach((item, index) => {
         const at = clocks ? clocks.get(item.itemId).start : formatTime(item.startTime);
-        const suffix = movedSuffix(moved.find((entry) => entry.itemId === item.itemId));
-
         lines.push(
             `${index + 1}. ${at}  ${item.foodName} (${item.optionLabel})`
-            + `  — ${formatMinutes(item.cookDuration)} min${suffix}`,
+            + `  — ${formatMinutes(item.cookDuration)} min`,
         );
 
         if (item.restSeconds > 0) {

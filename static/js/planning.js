@@ -10,8 +10,6 @@ import {
     writeCustomFoods,
     readOverrides,
     writeOverride,
-    readKitchen,
-    writeKitchen,
 } from './core/storage.js';
 import {
     findFood,
@@ -20,13 +18,12 @@ import {
     resolveSelection,
     groupByCategory,
 } from './core/foods.js';
-import { applyStrategy, describeConflicts } from './core/capacity.js';
 import { runsheetText } from './core/runsheet.js';
 
 let foods = [];
 let selectedFoods = [];
 let rowCounter = 0;
-let lastResult = { items: [], totalTime: 0, moved: [], conflicts: null, strategy: 'warn' };
+let lastResult = { items: [], totalTime: 0 };
 
 // G8: inline messaging instead of blocking alert() dialogs.
 function showMessage(text, tone = 'error') {
@@ -280,43 +277,10 @@ function updateSchedule() {
     writePlan(localStorage, selectedFoods);
 
     if (selectedFoods.length > 0) {
-        // G13/G14: the ideal schedule assumes infinite parallelism. Reconcile it
-        // with what the kitchen can actually do before showing it.
-        displaySchedule(applyStrategy(calculateSchedule(selectedFoods).items, readKitchen(localStorage)));
+        displaySchedule(calculateSchedule(selectedFoods));
     } else {
         document.getElementById('schedule-section').style.display = 'none';
     }
-}
-
-/** Show which dishes the strategy moved, and by how much. */
-function movedNote(moved) {
-    if (!moved) {
-        return '';
-    }
-    if (moved.finishesEarlyBy) {
-        return `<small class="moved-note">moved earlier — ready ${formatMinutes(moved.finishesEarlyBy)} min before the rest</small>`;
-    }
-    return `<small class="moved-note">moved later — ready ${formatMinutes(moved.finishesLateBy)} min after the rest</small>`;
-}
-
-function displayConflicts(result) {
-    const panel = document.getElementById('conflict-panel');
-    const lines = describeConflicts(result.conflicts, result.items);
-
-    if (lines.length === 0) {
-        panel.hidden = true;
-        panel.innerHTML = '';
-        return;
-    }
-
-    const heading = result.strategy === 'warn'
-        ? 'This needs more of the kitchen than you have:'
-        : 'Still more than the kitchen can do, even after rearranging:';
-
-    panel.hidden = false;
-    panel.innerHTML = `<strong>${heading}</strong><ul>`
-        + lines.map((line) => `<li>${line}</li>`).join('')
-        + '</ul>';
 }
 
 function displaySchedule(result) {
@@ -324,7 +288,6 @@ function displaySchedule(result) {
     const output = document.getElementById('schedule-output');
 
     lastResult = result;
-    displayConflicts(result);
 
     let html = '';
     result.items.forEach((item, index) => {
@@ -334,12 +297,9 @@ function displaySchedule(result) {
             intervalText = `<small>(${formatMinutes(intervalSec)} min after previous)</small>`;
         }
 
-        const moved = result.moved.find((entry) => entry.itemId === item.itemId);
-
         html += `
-            <div class="schedule-item${moved ? ' schedule-item--moved' : ''}">
+            <div class="schedule-item">
                 <strong>${item.foodName} (${item.optionLabel})</strong>
-                ${movedNote(moved)}
                 <div class="time">
                     Start at: ${formatTime(item.startTime)}
                     ${intervalText}
@@ -454,30 +414,6 @@ async function copyRunsheet() {
     );
 }
 
-// G13/G14: what this kitchen can actually do.
-function restoreKitchen() {
-    const kitchen = readKitchen(localStorage);
-    document.getElementById('kitchen-capacity').value = String(kitchen.capacity);
-    document.getElementById('kitchen-transition').value = String(kitchen.transitionSeconds / 60);
-    document.getElementById('kitchen-strategy').value = kitchen.strategy;
-}
-
-function onKitchenChange() {
-    const capacity = Number(document.getElementById('kitchen-capacity').value);
-    const minutes = Number(document.getElementById('kitchen-transition').value);
-
-    writeKitchen(localStorage, {
-        capacity: Number.isInteger(capacity) && capacity >= 1 ? capacity : 4,
-        transitionSeconds: Number.isFinite(minutes) && minutes >= 0 ? Math.round(minutes * 60) : 0,
-        strategy: document.getElementById('kitchen-strategy').value,
-    });
-    updateSchedule();
-}
-
-for (const id of ['kitchen-capacity', 'kitchen-transition', 'kitchen-strategy']) {
-    document.getElementById(id).addEventListener('change', onKitchenChange);
-}
-
 document.getElementById('copy-runsheet').addEventListener('click', copyRunsheet);
 document.getElementById('print-runsheet').addEventListener('click', () => window.print());
 document.getElementById('serve-at').addEventListener('change', updateSchedule);
@@ -504,5 +440,4 @@ document.getElementById('start-timer-btn').addEventListener('click', () => {
     window.location.href = 'timer.html';
 });
 
-restoreKitchen();
 loadFoods();

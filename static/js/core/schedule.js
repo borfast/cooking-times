@@ -23,9 +23,9 @@
  *   heatOffTime - startTime === cookDuration
  *   finishTime  - heatOffTime === restSeconds
  *
- * Only [startTime, heatOffTime) occupies a burner. A resting dish occupies none,
- * which is why the rest is modelled separately rather than folded into the cook
- * time — see core/capacity.js.
+ * Only [startTime, heatOffTime) is time on the heat; the rest happens off it.
+ * The two are modelled separately because the timer needs to tell you to take a
+ * dish off before it is ready to serve.
  */
 
 /** Seconds from going on the heat to being ready to serve. */

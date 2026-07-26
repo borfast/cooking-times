@@ -13,8 +13,6 @@ import {
   writeCustomFoods,
   readOverrides,
   writeOverride,
-  readKitchen,
-  writeKitchen,
 } from '../../static/js/core/storage.js';
 
 /** Minimal stand-in for Window.localStorage. */
@@ -158,55 +156,4 @@ test('writing a null override forgets it', () => {
   writeOverride(storage, 'chicken', 'cooked-through', null);
 
   assert.deepEqual(readOverrides(storage), {});
-});
-
-test('kitchen settings default to a four-ring hob that only warns', () => {
-  assert.deepEqual(readKitchen(fakeStorage()), {
-    capacity: 4,
-    transitionSeconds: 0,
-    strategy: 'warn',
-  });
-});
-
-test('kitchen settings survive corrupt storage', () => {
-  const storage = fakeStorage({ 'cooking-kitchen': 'not json' });
-  assert.deepEqual(readKitchen(storage), { capacity: 4, transitionSeconds: 0, strategy: 'warn' });
-});
-
-test('kitchen settings round-trip', () => {
-  const storage = fakeStorage();
-  writeKitchen(storage, { capacity: 2, transitionSeconds: 120, strategy: 'extend' });
-
-  assert.deepEqual(readKitchen(storage), {
-    capacity: 2,
-    transitionSeconds: 120,
-    strategy: 'extend',
-  });
-});
-
-test('a partial kitchen record falls back field by field', () => {
-  const storage = fakeStorage({ 'cooking-kitchen': '{"capacity":6}' });
-
-  assert.deepEqual(readKitchen(storage), {
-    capacity: 6,
-    transitionSeconds: 0,
-    strategy: 'warn',
-  });
-});
-
-test('a nonsense capacity falls back to the default', () => {
-  for (const bad of [0, -1, 2.5, 'four', null]) {
-    const storage = fakeStorage({ 'cooking-kitchen': JSON.stringify({ capacity: bad }) });
-    assert.equal(readKitchen(storage).capacity, 4, `capacity ${bad}`);
-  }
-});
-
-test('a nonsense strategy falls back to warn', () => {
-  const storage = fakeStorage({ 'cooking-kitchen': '{"strategy":"teleport"}' });
-  assert.equal(readKitchen(storage).strategy, 'warn');
-});
-
-test('a negative transition time falls back to zero', () => {
-  const storage = fakeStorage({ 'cooking-kitchen': '{"transitionSeconds":-30}' });
-  assert.equal(readKitchen(storage).transitionSeconds, 0);
 });

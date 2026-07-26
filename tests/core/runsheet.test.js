@@ -4,7 +4,6 @@ import { clockTimes, runsheetText } from '../../static/js/core/runsheet.js';
 
 const result = {
   totalTime: 780,
-  moved: [],
   items: [
     {
       itemId: 'r0',
@@ -83,7 +82,7 @@ test('runsheetText calls out the rest step', () => {
 });
 
 test('runsheetText does not invent a rest step for a dish without one', () => {
-  const broccoliOnly = { totalTime: 300, moved: [], items: [result.items[1]] };
+  const broccoliOnly = { totalTime: 300, items: [result.items[1]] };
   const text = runsheetText(broccoliOnly, { readyAt: null });
   assert.ok(!/off the heat/i.test(text));
 });
@@ -92,28 +91,7 @@ test('runsheetText states the total', () => {
   assert.match(runsheetText(result, { readyAt: null }), /13 minutes/);
 });
 
-test('runsheetText flags dishes the strategy moved', () => {
-  const moved = {
-    ...result,
-    moved: [{ itemId: 'r1', fromStart: 480, toStart: 0, finishesEarlyBy: 480 }],
-  };
-  assert.match(runsheetText(moved, { readyAt: null }), /8 min before/);
-});
-
-test('runsheetText flags dishes moved later too', () => {
-  const moved = {
-    ...result,
-    moved: [{ itemId: 'r1', fromStart: 480, toStart: 900, finishesLateBy: 420 }],
-  };
-  assert.match(runsheetText(moved, { readyAt: null }), /7 min after/);
-});
-
 test('runsheetText handles an empty schedule without throwing', () => {
-  const text = runsheetText({ items: [], totalTime: 0, moved: [] }, { readyAt: null });
+  const text = runsheetText({ items: [], totalTime: 0 }, { readyAt: null });
   assert.equal(typeof text, 'string');
-});
-
-test('runsheetText tolerates a missing moved list', () => {
-  const text = runsheetText({ items: result.items, totalTime: 780 }, { readyAt: null });
-  assert.match(text, /Beef Steak/);
 });

@@ -29,7 +29,6 @@ const SHELL = [
     './static/js/planning.js',
     './static/js/timer.js',
     './static/js/core/alerts.js',
-    './static/js/core/capacity.js',
     './static/js/core/foods.js',
     './static/js/core/format.js',
     './static/js/core/runsheet.js',

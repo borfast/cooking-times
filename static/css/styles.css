@@ -794,100 +794,6 @@ a:focus-visible {
     }
 }
 
-/* G13/G14: what this kitchen can actually do. */
-.kitchen-settings {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: flex-end;
-    padding: 1rem;
-    margin-bottom: 1.25rem;
-    background: var(--color-panel);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-}
-
-.kitchen-settings label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-muted);
-}
-
-.kitchen-settings input[type="number"] {
-    width: 5rem;
-}
-
-.kitchen-settings .kitchen-strategy {
-    flex: 1 1 220px;
-}
-
-.kitchen-settings small {
-    font-weight: 400;
-}
-
-.conflict-panel {
-    padding: 0.9rem 1.1rem;
-    margin-bottom: 1.25rem;
-    border-radius: var(--radius-sm);
-    border: 1px solid color-mix(in srgb, var(--color-warning) 55%, transparent);
-    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
-    font-size: 0.95rem;
-}
-
-.conflict-panel[hidden] {
-    display: none;
-}
-
-.conflict-panel ul {
-    margin: 0.4rem 0 0;
-    padding-left: 1.2rem;
-}
-
-.schedule-item--moved {
-    border-left: 3px solid var(--color-primary);
-    padding-left: 0.75rem;
-}
-
-.moved-note {
-    display: block;
-    color: var(--color-primary-strong);
-    font-weight: 500;
-}
-
-@media (max-width: 700px) {
-    .kitchen-settings {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* G25: off the heat, not yet ready. */
-.food-timer-item.resting {
-    border-color: color-mix(in srgb, var(--color-warning) 50%, transparent);
-    background: color-mix(in srgb, var(--color-warning) 8%, var(--color-panel-strong));
-}
-
-.resting-time {
-    color: var(--color-warning);
-    font-weight: 600;
-}
-
-/* G18: visible to screen readers, not to eyes. */
-.visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-}
-
 /* G26: taking the plan away from the screen. */
 .runsheet-actions {
     display: flex;
@@ -909,7 +815,6 @@ a:focus-visible {
 }
 
 @media print {
-    .kitchen-settings,
     .custom-food,
     .food-selector,
     .runsheet-actions,
@@ -930,8 +835,4 @@ a:focus-visible {
         border: 1px solid #999;
     }
 
-    .conflict-panel {
-        border: 1px solid #999;
-        background: none;
-    }
 }
