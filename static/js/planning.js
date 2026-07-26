@@ -1,4 +1,5 @@
-// T029-T031: Client-side schedule calculation and DOM manipulation
+import { calculateSchedule } from './core/schedule.js';
+import { formatTime, formatMinutes } from './core/format.js';
 
 let foods = [];
 let selectedFoods = [];
@@ -149,34 +150,6 @@ function updateSchedule() {
     }
 }
 
-// Calculate schedule (same algorithm as backend)
-function calculateSchedule(foods) {
-    if (foods.length === 0) {
-        return { items: [], totalTime: 0 };
-    }
-
-    // Find max cooking time
-    const maxTime = Math.max(...foods.map(f => f.cookingTime));
-
-    // Calculate start time for each food
-    const items = foods.map(food => ({
-        foodId: food.foodId,
-        foodName: food.foodName,
-        doneness: food.doneness,
-        startTime: maxTime - food.cookingTime,
-        duration: food.cookingTime,
-        finishTime: maxTime
-    }));
-
-    // Sort by start time
-    items.sort((a, b) => a.startTime - b.startTime);
-
-    return {
-        items,
-        totalTime: maxTime
-    };
-}
-
 // Display schedule
 function displaySchedule(schedule) {
     const section = document.getElementById('schedule-section');
@@ -184,42 +157,28 @@ function displaySchedule(schedule) {
 
     let html = '';
     schedule.items.forEach((item, index) => {
-        const startMin = Math.floor(item.startTime / 60);
-        const startSec = item.startTime % 60;
-        const durationMin = Math.floor(item.duration / 60);
-
         let intervalText = '';
         if (index > 0) {
-            const prevItem = schedule.items[index - 1];
-            const intervalSec = item.startTime - prevItem.startTime;
-            const intervalMin = Math.floor(intervalSec / 60);
-            intervalText = `<small>(${intervalMin} min after previous)</small>`;
+            const intervalSec = item.startTime - schedule.items[index - 1].startTime;
+            intervalText = `<small>(${formatMinutes(intervalSec)} min after previous)</small>`;
         }
 
         html += `
             <div class="schedule-item">
                 <strong>${item.foodName} (${item.doneness})</strong>
                 <div class="time">
-                    Start at: ${startMin}:${startSec.toString().padStart(2, '0')}
+                    Start at: ${formatTime(item.startTime)}
                     ${intervalText}
                 </div>
-                <div class="time">Cook for: ${durationMin} minutes</div>
+                <div class="time">Cook for: ${formatMinutes(item.duration)} minutes</div>
             </div>
         `;
     });
 
-    const totalMin = Math.floor(schedule.totalTime / 60);
-    html += `<div class="total-time">Total Time: ${totalMin} minutes</div>`;
+    html += `<div class="total-time">Total Time: ${formatMinutes(schedule.totalTime)} minutes</div>`;
 
     output.innerHTML = html;
     section.style.display = 'block';
-}
-
-// Format seconds as MM:SS
-function formatTime(seconds) {
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
-    return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
 // Event listeners
