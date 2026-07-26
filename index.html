@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cooking Timer - Plan Your Meal</title>
     <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#ff6b4a">
+    <link rel="icon" href="static/icons/icon-192.png" type="image/png">
 </head>
 <body>
     <div class="container">
@@ -101,5 +104,16 @@
     </div>
 
     <script type="module" src="static/js/planning.js"></script>
+    <script>
+        // G16: register the offline cache. Guarded, because the app must still
+        // work in browsers without service workers -- just not offline.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((error) => {
+                    console.warn('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
 </body>
 </html>

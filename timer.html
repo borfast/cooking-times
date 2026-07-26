@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cooking Timer - Execution</title>
     <link rel="stylesheet" href="static/css/styles.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#ff6b4a">
+    <link rel="icon" href="static/icons/icon-192.png" type="image/png">
     <!-- Order matters: this module must run before Alpine, which starts itself
          on execution. Deferred scripts run in document order. -->
     <script type="module" src="static/js/timer.js"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script defer src="static/vendor/alpine-3.13.3.min.js"></script>
 </head>
 <body>
     <div class="container" x-data="timerApp()" x-init="init()">
@@ -202,5 +205,16 @@
         </main>
     </div>
 
+    <script>
+        // G16: register the offline cache. Guarded, because the app must still
+        // work in browsers without service workers -- just not offline.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((error) => {
+                    console.warn('Service worker registration failed:', error);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
