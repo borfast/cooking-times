@@ -116,3 +116,20 @@ All 26 gaps are addressed across five phases, 30 commits and 143 unit tests, wit
 3. `formatTime` in the old `schedule.js` was not merely duplicated but dead — never called from anywhere. (Found while planning Phase 1.)
 
 **Known limitation worth carrying forward.** The two capacity placers are greedy heuristics, not optimal — packing dishes under a concurrency cap is bin-packing. `stagger` in particular is best-effort: nothing can start before t=0, so it can do nothing at all when every dish is the same length, and can never beat the ring-time a fixed total allows. Both report unresolvable residue rather than hiding it.
+
+
+## Revision, 2026-07-26
+
+After Phase 5 the user reviewed the outcome and made two changes.
+
+**G13 and G14 were removed and reopened as accepted gaps.** The capacity model — settings, conflict warnings and both rescheduling strategies — was deleted in favour of the original app's single simple timing (`ace99c6`). `core/capacity.js` and its 40 tests are gone, along with the kitchen settings, the conflict panel and the moved-dish handling in the run sheet. Resting (G25) is untouched, being independent of capacity. The work is recoverable from that commit if the decision is revisited.
+
+**G20 is now fully closed.** Biome provides linting and formatting and GitHub Actions runs lint plus tests, following the arrispwgen setup. It found four real classes of issue beyond formatting, including twelve buttons with no explicit type and an unnecessary `!important` in the print rules.
+
+Revised standing:
+
+| Status | Gaps |
+| --- | --- |
+| Closed | G1–G12, G15–G22, G24, G26 |
+| Partly closed | G23 (times correctable, not modelled), G25 (resting yes, serve order excluded by D4) |
+| Open, deliberately accepted | G13, G14 |
