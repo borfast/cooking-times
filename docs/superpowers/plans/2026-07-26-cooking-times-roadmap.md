@@ -25,15 +25,15 @@ These were decided with the user on 2026-07-26 and are binding on the phases bel
 
 ## Phase index
 
-### Phase 1 — Test harness and core extraction
+### Phase 1 — Test harness and core extraction ✅
 **Plan:** `2026-07-26-phase-1-test-harness-and-core-extraction.md`
 **Closes:** G11, G20
 **Ships:** Identical app behaviour, plus `static/js/core/` as tested ES modules and `npm test` running with zero installed dependencies.
 
 The scheduling rule and the mid-cook recalculation become pure, importable, tested functions. Nothing else in this phase changes what a user sees.
 
-### Phase 2 — Defect fixes
-**Plan:** to be written on completion of Phase 1.
+### Phase 2 — Defect fixes ✅
+**Plan:** `2026-07-26-phase-2-defect-fixes.md`
 **Closes:** G1, G2, G3, G4, G5, G6, G7, G8, G9, G10, G12, G19
 **Ships:** The same feature set with its twelve defects gone — replanning works, `localStorage` is written once per five seconds, duplicate foods are rejected at planning time, missed alerts are summarised rather than shouted, errors are inline instead of modal, and the app has a dark mode.
 
@@ -43,6 +43,8 @@ G19 (dark mode) is folded in here rather than into Phase 5 because it is pure CS
 **Plan:** to be written on completion of Phase 2.
 **Closes:** G21, G22, G23, G24
 **Ships:** Per-food cooking option sets (D1), quantity and method as time modifiers, and user-defined foods persisted locally. Includes a migration for plans saved under the old three-tier schema.
+
+Also carries a debt from Phase 2: duplicate dishes are currently *rejected* at planning time, which matches what the timer already enforced but blocks a real use case — two steaks at different doneness. The proper fix is to give each row its own identity instead of keying on `foodId`, which changes the schedule item shape, so it belongs with this phase's schema change. Doing so also fixes the Alpine `x-for` key collision noted in G3.
 
 ### Phase 4 — Scheduling engine
 **Plan:** to be written on completion of Phase 3.

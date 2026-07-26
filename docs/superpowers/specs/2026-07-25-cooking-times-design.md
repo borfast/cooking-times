@@ -204,34 +204,34 @@ Numbered for triage, grouped by kind. Each entry states the cost, not the fix.
 ### Defects
 
 **G1 — A new plan is silently ignored while a session exists.**
-The timer screen prefers `cooking-timer-session` over `cooking-schedule`, and the planning screen's "Start Timer" does not clear the session. Repro: cook a meal to completion, go back to planning, choose different foods, press Start Timer — you are shown the previous, finished schedule. The only escape is pressing Reset, which is not signposted as the thing that makes replanning work. This is the most user-visible bug in the app.
+The timer screen prefers `cooking-timer-session` over `cooking-schedule`, and the planning screen's "Start Timer" does not clear the session. Repro: cook a meal to completion, go back to planning, choose different foods, press Start Timer — you are shown the previous, finished schedule. The only escape is pressing Reset, which is not signposted as the thing that makes replanning work. This is the most user-visible bug in the app. *Closed in Phase 2: Start Timer clears the session, confirming first when a cook is in progress (D5).*
 
 **G2 — Roughly 60 `localStorage` writes per second, one second in every five.**
-`updateTimer` runs per animation frame and saves when `elapsedSeconds % 5 === 0`. Because `elapsedSeconds` is integer seconds, that condition is true for every frame of that whole second. Each write serialises the entire session. The intent was clearly one save every five seconds.
+`updateTimer` runs per animation frame and saves when `elapsedSeconds % 5 === 0`. Because `elapsedSeconds` is integer seconds, that condition is true for every frame of that whole second. Each write serialises the entire session. The intent was clearly one save every five seconds. *Closed in Phase 2: measured 5 writes in 11 seconds, against 120+ before.*
 
 **G3 — Duplicate foods are accepted when planning and assumed impossible when timing.**
-The planning screen has no duplicate check; the timer screen's "add food" does. A meal containing two entries of the same food therefore reaches a timer that identifies items by `foodId`: `changeDoneness` and `removeFood` both act on the first match only, alert regeneration matches on `foodName`, and Alpine's `x-for` is keyed on `foodId`, so the duplicate keys will misrender. Either duplicates should be rejected at planning time or items need their own identity.
+The planning screen has no duplicate check; the timer screen's "add food" does. A meal containing two entries of the same food therefore reaches a timer that identifies items by `foodId`: `changeDoneness` and `removeFood` both act on the first match only, alert regeneration matches on `foodName`, and Alpine's `x-for` is keyed on `foodId`, so the duplicate keys will misrender. Either duplicates should be rejected at planning time or items need their own identity. *Partly closed in Phase 2: duplicates are rejected at planning time, matching the timer. Per-row item identity is the better fix and lands with the Phase 3 schema change.*
 
 **G4 — Reset is inconsistent with reload.**
-`reset()` clears the stored session but keeps the in-memory schedule, so Reset-then-Start replays the schedule *including* any mid-cook edits. Reloading the page after Reset falls back to `cooking-schedule` and replays the *original* plan. Two paths that both read as "start over" give different meals.
+`reset()` clears the stored session but keeps the in-memory schedule, so Reset-then-Start replays the schedule *including* any mid-cook edits. Reloading the page after Reset falls back to `cooking-schedule` and replays the *original* plan. Two paths that both read as "start over" give different meals. *Closed in Phase 2: Reset reloads the saved plan, so both paths agree.*
 
 **G5 — Restoring a long-finished session fires every outstanding alert in one frame.**
-Close the tab mid-cook, reopen after the meal would have finished, and the first tick fires every un-fired alert at once. Each constructs its own `AudioContext`; browsers cap concurrent contexts around six, so the rest throw and are swallowed by a `catch`. The notifications collapse into one because they share a tag, and the popup shows only the last message. What should be "you missed these four steps" is a burst of noise and one arbitrary message.
+Close the tab mid-cook, reopen after the meal would have finished, and the first tick fires every un-fired alert at once. Each constructs its own `AudioContext`; browsers cap concurrent contexts around six, so the rest throw and are swallowed by a `catch`. The notifications collapse into one because they share a tag, and the popup shows only the last message. What should be "you missed these four steps" is a burst of noise and one arbitrary message. *Closed in Phase 2: the backlog is marked fired and summarised as "While you were away: ...". Measured 1 AudioContext for a three-alert backlog.*
 
-**G6 — Notification icon does not exist.** `showNotification` references `static/images/timer-icon.png`. There is no `static/images/` directory.
+**G6 — Notification icon does not exist.** `showNotification` references `static/images/timer-icon.png`. There is no `static/images/` directory. *Closed in Phase 2: the reference is gone. Real icons arrive with the Phase 5 PWA work.*
 
-**G7 — Planning selections persist only via Start Timer.** There is no save on change, so building a six-item meal and reloading the page loses it. The restore path exists and works, which makes the gap look like an oversight rather than a decision.
+**G7 — Planning selections persist only via Start Timer.** There is no save on change, so building a six-item meal and reloading the page loses it. The restore path exists and works, which makes the gap look like an oversight rather than a decision. *Closed in Phase 2: every change is persisted.*
 
-**G8 — All error messaging uses blocking `alert()`.** Seven call sites. On a phone propped against a kitchen wall this is a modal you must dismiss before the timer is legible again. Two of them ("no cooking schedule found") leave you on a dead screen with no route forward but the browser back button.
+**G8 — All error messaging uses blocking `alert()`.** Seven call sites. On a phone propped against a kitchen wall this is a modal you must dismiss before the timer is legible again. Two of them ("no cooking schedule found") leave you on a dead screen with no route forward but the browser back button. *Closed in Phase 2: all seven call sites replaced with an inline `role="status"` region.*
 
-**G9 — Notification permission is requested on page load.** Browsers increasingly penalise or auto-deny permission prompts not tied to a user gesture. "Start Cooking" is the obvious gesture to attach it to.
+**G9 — Notification permission is requested on page load.** Browsers increasingly penalise or auto-deny permission prompts not tied to a user gesture. "Start Cooking" is the obvious gesture to attach it to. *Closed in Phase 2: requested from start().*
 
-**G10 — The UI recomputes at 60 Hz for values that change once per second.** Every visible countdown re-evaluates `formatTime` per item per frame. Harmless on a laptop; it is battery drain on the phone that is actually going to run this.
+**G10 — The UI recomputes at 60 Hz for values that change once per second.** Every visible countdown re-evaluates `formatTime` per item per frame. Harmless on a laptop; it is battery drain on the phone that is actually going to run this. *Closed in Phase 2: the tick bails unless the whole second changed. Measured 3 ticks in 3 seconds.*
 
 **G11 — The scheduling rule was duplicated across both JS files, and one copy of the formatter was dead.**
 `calculateSchedule` existed in both `schedule.js` and `timer.js`. The copies were logically equivalent but *not* textually identical: the planning copy guarded with `foods.length === 0` and threw on `null`, the timer copy guarded with `!foods || foods.length === 0`. `formatTime` also existed in both, but the planning page's copy was never called from anywhere — `displaySchedule` formatted inline instead. The scheduling rule is the one piece of logic where divergence would be silent and wrong. *Closed in Phase 1: both live in `static/js/core/`, the null-safe guard won, and the dead copy is gone.*
 
-**G12 — Minor:** `removeFood`'s last-food guard re-adds the food using `scheduleItem.doneness`, having already null-checked `scheduleItem` earlier in the function; if it were ever null the guard path throws. And `recalculateSchedulePreservingProgress` writes a fresh `duration` onto started items while leaving their `startTime`/`finishTime` alone, so `finishTime - startTime ≠ duration` would be reachable if the doneness guard were ever relaxed. *The second half is closed in Phase 1: the extracted `recalculateSchedule` derives a started dish's duration from the timings actually in force, and the invariant is pinned by a test. The `removeFood` null-check half remains open.*
+**G12 — Minor:** `removeFood`'s last-food guard re-adds the food using `scheduleItem.doneness`, having already null-checked `scheduleItem` earlier in the function; if it were ever null the guard path throws. And `recalculateSchedulePreservingProgress` writes a fresh `duration` onto started items while leaving their `startTime`/`finishTime` alone, so `finishTime - startTime ≠ duration` would be reachable if the doneness guard were ever relaxed. *Both halves closed as of Phase 2: the duration is derived from the timings in force, and removeFood restores the actual selection.*
 
 ### Design limits
 
@@ -248,7 +248,7 @@ The scheduler will happily tell you to have six things cooking at once. Real kit
 
 **G18 — Accessibility gaps.** The alert popup has no `role="alert"` or live region, so a screen reader is never told it is time to start the potatoes — which is the entire point of the app. Neither screen's selects have `<label>`s. The timer's remove button conveys its purpose through `title` alone, where the planning screen's equivalent correctly uses `aria-label`. The countdown updates 60 times a second in the accessibility tree.
 
-**G19 — No dark mode.** `color-scheme: light` is declared and no `prefers-color-scheme` rules exist.
+**G19 — No dark mode.** `color-scheme: light` is declared and no `prefers-color-scheme` rules exist. *Closed in Phase 2: dark mode via prefers-color-scheme, overriding the custom properties only.*
 
 **G20 — No tests, no linting, no CI.** For 2,000 lines this is defensible; for the scheduling and recalculation logic specifically it is not. `recalculateSchedulePreservingProgress` has at least six meaningful cases and none of them are pinned. *Partly closed in Phase 1: `npm test` runs 24 unit tests over the scheduling core with zero installed dependencies, covering all six mid-cook cases plus the duration invariant. Linting and CI remain open.*
 
