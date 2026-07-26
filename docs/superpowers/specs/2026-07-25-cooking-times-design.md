@@ -23,15 +23,16 @@ Cooking a meal of several dishes means starting each one at a different time so 
 | `id` | Stable slug, e.g. `beef-steak` |
 | `name` | Display name |
 | `category` | One of `Meat`, `Fish`, `Vegetables`, `Grains`, `Other` — used only to group the picker |
-| `cookingTimes` | Three durations in seconds, keyed `rare` / `medium` / `well-done` |
+| `options` | One or more `{ id, label, seconds }` entries — the axis that is honest for *this* food |
+| `defaultOptionId` | Which option is preselected |
 
-The catalogue is static and read-only. There is no way to add a food, edit a time, or persist a custom entry from within the app.
+*As of Phase 3.* The bundled catalogue holds 30 foods, and users may add their own, stored locally and merged at load. Times may be corrected per dish and the correction is remembered per food-and-option.
 
-**Doneness** — one of `rare`, `medium`, `well-done`. Every food offers all three; the labels are fixed and identical regardless of what the food is. Doneness is purely a selector into `cookingTimes` — it carries no other meaning in the system.
+**Cooking option** — a named way to cook a particular food. The axis differs by food, which is the whole point: a steak offers Rare / Medium / Well done, rice offers only Cooked, pasta offers Al dente / Soft, and chicken offers only Cooked through, because rare chicken is not a choice. Option counts of one, two and three all occur.
 
-**Selection** — a food plus a chosen doneness, resolved to a concrete `cookingTime`. A meal is an ordered list of these.
+**Selection** — one row on the menu: a food, a chosen option, and a resolved `cookingTime`. Carries an `itemId` that is unique to the row, so two portions of the same food at different options are a legitimate meal.
 
-**Schedule** — the computed plan. A list of items, each carrying `foodId`, `foodName`, `doneness`, `startTime`, `duration`, `finishTime`, plus a `totalTime` for the meal. All times are seconds measured from the moment cooking begins (t=0), never wall-clock.
+**Schedule** — the computed plan. A list of items, each carrying `itemId`, `foodId`, `foodName`, `optionLabel`, `startTime`, `duration`, `finishTime`, plus a `totalTime` for the meal. All times are seconds measured from the moment cooking begins (t=0), never wall-clock. Identity is always `itemId`, never `foodId`.
 
 **Session** — a running or paused timer: a schedule, a status, a start timestamp, and the set of alerts with their fired/not-fired state.
 
@@ -54,7 +55,7 @@ Consequences, all intentional as far as the code reveals:
 - **Cooking is assumed infinitely parallel.** Six items can all be "cooking" at once with no constraint on hobs, oven space, or pans.
 - **Transitions are free.** Two items scheduled 0 seconds apart are assumed to be startable at the same instant.
 
-This function is implemented twice, identically, in `static/js/schedule.js:153` and `static/js/timer.js:119`.
+*As of Phase 1* this function lives once, in `static/js/core/schedule.js`, with unit tests.
 
 ---
 
@@ -210,7 +211,7 @@ The timer screen prefers `cooking-timer-session` over `cooking-schedule`, and th
 `updateTimer` runs per animation frame and saves when `elapsedSeconds % 5 === 0`. Because `elapsedSeconds` is integer seconds, that condition is true for every frame of that whole second. Each write serialises the entire session. The intent was clearly one save every five seconds. *Closed in Phase 2: measured 5 writes in 11 seconds, against 120+ before.*
 
 **G3 — Duplicate foods are accepted when planning and assumed impossible when timing.**
-The planning screen has no duplicate check; the timer screen's "add food" does. A meal containing two entries of the same food therefore reaches a timer that identifies items by `foodId`: `changeDoneness` and `removeFood` both act on the first match only, alert regeneration matches on `foodName`, and Alpine's `x-for` is keyed on `foodId`, so the duplicate keys will misrender. Either duplicates should be rejected at planning time or items need their own identity. *Partly closed in Phase 2: duplicates are rejected at planning time, matching the timer. Per-row item identity is the better fix and lands with the Phase 3 schema change.*
+The planning screen has no duplicate check; the timer screen's "add food" does. A meal containing two entries of the same food therefore reaches a timer that identifies items by `foodId`: `changeDoneness` and `removeFood` both act on the first match only, alert regeneration matches on `foodName`, and Alpine's `x-for` is keyed on `foodId`, so the duplicate keys will misrender. Either duplicates should be rejected at planning time or items need their own identity. *Fully closed in Phase 3: every row carries its own `itemId`, so duplicates are allowed again — two steaks at different doneness is a supported meal. Phase 2's rejection was a stopgap and has been removed. This also fixed a latent bug the register missed: alert regeneration matched on `foodName`, so firing one steak's alert silenced the other's.*
 
 **G4 — Reset is inconsistent with reload.**
 `reset()` clears the stored session but keeps the in-memory schedule, so Reset-then-Start replays the schedule *including* any mid-cook edits. Reloading the page after Reset falls back to `cooking-schedule` and replays the *original* plan. Two paths that both read as "start over" give different meals. *Closed in Phase 2: Reset reloads the saved plan, so both paths agree.*
@@ -255,16 +256,16 @@ The scheduler will happily tell you to have six things cooking at once. Real kit
 ### Product critique
 
 **G21 — "Doneness" is the wrong abstraction, applied universally.**
-Rare, medium and well-done are steak vocabulary. The app offers them for rice, quinoa, couscous, kale and tofu, where "rare rice" is not a thing anyone has asked for. What the field actually encodes is *how long you want it cooked* — a duration preference wearing a doneness costume. Either the axis should be renamed to something food-neutral (firm / standard / soft, say) or it should vary per food, with steaks getting doneness and grains getting nothing at all.
+Rare, medium and well-done are steak vocabulary. The app offers them for rice, quinoa, couscous, kale and tofu, where "rare rice" is not a thing anyone has asked for. What the field actually encodes is *how long you want it cooked* — a duration preference wearing a doneness costume. Either the axis should be renamed to something food-neutral (firm / standard / soft, say) or it should vary per food, with steaks getting doneness and grains getting nothing at all. *Closed in Phase 3: the axis varies per food. Chicken has one option, "Cooked through".*
 
 **G22 — Every food gets exactly three options, whether or not the axis means anything.**
-The data model forces three tiers on all 30 items. Some foods have one sensible cooking time. Some have more than three. The schema cannot express either.
+The data model forces three tiers on all 30 items. Some foods have one sensible cooking time. Some have more than three. The schema cannot express either. *Closed in Phase 3: option counts of one, two and three all occur across the 30 bundled foods.*
 
 **G23 — Cooking time ignores everything that actually determines cooking time.**
-No quantity, no thickness, no cooking method, no starting temperature. One potato and two kilos of potatoes get 1200 seconds. A steak's cook time depends far more on thickness than on the doneness the app does model.
+No quantity, no thickness, no cooking method, no starting temperature. One potato and two kilos of potatoes get 1200 seconds. A steak's cook time depends far more on thickness than on the doneness the app does model. *Partly closed in Phase 3: the app still has no model of quantity, thickness or method — modelling them improperly would mean inventing coefficients and presenting fiction as arithmetic. Instead it stops pretending its numbers are authoritative: any dish's time can be corrected, and the correction is remembered per food-and-option. The underlying gap stands.*
 
 **G24 — The catalogue is closed.**
-Thirty foods, no way to add a thirty-first, no way to correct a time you disagree with, no way to save "my roast chicken takes 90 minutes not 35". Any real user hits this on their first meal. Because the app is fully static and already uses `localStorage`, user-defined foods would be cheap to add.
+Thirty foods, no way to add a thirty-first, no way to correct a time you disagree with, no way to save "my roast chicken takes 90 minutes not 35". Any real user hits this on their first meal. Because the app is fully static and already uses `localStorage`, user-defined foods would be cheap to add. *Closed in Phase 3: users can add their own foods, and can correct any bundled time.*
 
 **G25 — Simultaneous finish is assumed, not chosen.**
 There is no way to say "the steak should rest for five minutes", "serve the soup first", or "keep the potatoes warm". Resting time in particular is standard practice for exactly the meat this app schedules, and the model has no slot for it.

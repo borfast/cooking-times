@@ -18,6 +18,9 @@ These were decided with the user on 2026-07-26 and are binding on the phases bel
 
 | # | Decision | Affects |
 | --- | --- | --- |
+| D5 | **Replacing a session confirms only mid-cook.** Starting a new plan silently replaces a finished or never-started session, but asks before discarding a `running` or `paused` one. | G1 |
+| D6 | **Per-row `itemId` identity.** Duplicate foods are allowed; identity is never `foodId`. | G3 |
+| D7 | **No migrations.** The tool has no users yet, so storage and data shapes may change freely. | Phases 3–5 |
 | D1 | **Per-food cooking option sets.** Each food declares its own named options with durations. Steak keeps rare/medium/well-done; rice gets a single option; pasta gets al dente/soft. Replaces the forced three-tier `cookingTimes` object. | G21, G22 |
 | D2 | **Capacity conflicts are user-selectable.** The scheduler takes a strategy: `warn` (default — today's arithmetic, plus a flagged conflict), `extend` (push the finish later to respect capacity), or `stagger` (let some dishes finish early and keep warm). Default is `warn`. | G13 |
 | D3 | **Vendor Alpine and both font families locally** into `static/vendor/`. Makes the app work offline and makes SRI moot, since nothing loads from a third party. Every URL to be shown to the user before fetching. | G16, G17 |
@@ -39,8 +42,8 @@ The scheduling rule and the mid-cook recalculation become pure, importable, test
 
 G19 (dark mode) is folded in here rather than into Phase 5 because it is pure CSS and touches nothing the later phases restructure.
 
-### Phase 3 — Data model
-**Plan:** to be written on completion of Phase 2.
+### Phase 3 — Data model ✅
+**Plan:** `2026-07-26-phase-3-data-model.md`
 **Closes:** G21, G22, G23, G24
 **Ships:** Per-food cooking option sets (D1), quantity and method as time modifiers, and user-defined foods persisted locally. Includes a migration for plans saved under the old three-tier schema.
 
