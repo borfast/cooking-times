@@ -55,6 +55,8 @@ Consequences, all intentional as far as the code reveals:
 - **Cooking is assumed infinitely parallel.** Six items can all be "cooking" at once with no constraint on hobs, oven space, or pans.
 - **Transitions are free.** Two items scheduled 0 seconds apart are assumed to be startable at the same instant.
 
+*As of Phase 4 the last three no longer hold unconditionally.* A dish has two phases — `startTime → heatOffTime` on the heat, then `restSeconds` off it, ready at `finishTime` — so `totalTime = max(cookDuration + restSeconds)`. Capacity and changeover time are declared per kitchen, and the synchronised finish is now conditional: when the kitchen cannot support it, the chosen strategy either reports the conflict, moves dishes earlier so they keep warm, or moves them later so the meal is ready later. Only the time on the heat counts against capacity.
+
 *As of Phase 1* this function lives once, in `static/js/core/schedule.js`, with unit tests.
 
 ---
@@ -237,9 +239,9 @@ Close the tab mid-cook, reopen after the meal would have finished, and the first
 ### Design limits
 
 **G13 — Unlimited simultaneous cooking capacity.**
-The scheduler will happily tell you to have six things cooking at once. Real kitchens have four hobs, one oven at one temperature, and a finite number of pans. This is the single largest gap between the schedule the app produces and a schedule you can actually execute, and closing it means modelling resources — which is a substantially different product, not a patch.
+The scheduler will happily tell you to have six things cooking at once. Real kitchens have four hobs, one oven at one temperature, and a finite number of pans. This is the single largest gap between the schedule the app produces and a schedule you can actually execute, and closing it means modelling resources — which is a substantially different product, not a patch. *Closed in Phase 4, with a correction: the original decision (D2) was to resolve conflicts by pushing the finish later, which does not work. When every dish is ready at a common time T, dish i is on the heat over [T − rest − cook, T − rest]; raising T translates every interval right by the same amount, so the overlap pattern is invariant. Overlap is a property of the durations alone, and any resolution must break the synchronised finish. The app therefore declares capacity and offers three responses: `warn` (default — report and change nothing), `stagger` (move dishes earlier so they finish early and keep warm; the food waits), and `extend` (move them later so the meal is ready later; you wait). The placers are documented greedy heuristics: `stagger` is best-effort because nothing can start before t=0 and it can never beat the ring-time a fixed total allows, whereas `extend` always has room later and always resolves. Unresolvable residue is reported, not hidden.*
 
-**G14 — Zero prep and transition time.** Items scheduled two seconds apart are assumed startable two seconds apart. In practice each start costs you draining, seasoning, or finding the lid.
+**G14 — Zero prep and transition time.** Items scheduled two seconds apart are assumed startable two seconds apart. In practice each start costs you draining, seasoning, or finding the lid. *Closed in Phase 4: a changeover time is declared per kitchen, starts closer together than it are reported as conflicts, and both non-warn strategies space starts by at least that much where they have room.*
 
 **G15 — No screen wake lock.** A kitchen timer's device will sleep. The Screen Wake Lock API exists for precisely this. Without it the alarm still fires — audio and notifications survive — but the at-a-glance display, which is the reason to use this over a phone timer, does not.
 
@@ -268,7 +270,7 @@ No quantity, no thickness, no cooking method, no starting temperature. One potat
 Thirty foods, no way to add a thirty-first, no way to correct a time you disagree with, no way to save "my roast chicken takes 90 minutes not 35". Any real user hits this on their first meal. Because the app is fully static and already uses `localStorage`, user-defined foods would be cheap to add. *Closed in Phase 3: users can add their own foods, and can correct any bundled time.*
 
 **G25 — Simultaneous finish is assumed, not chosen.**
-There is no way to say "the steak should rest for five minutes", "serve the soup first", or "keep the potatoes warm". Resting time in particular is standard practice for exactly the meat this app schedules, and the model has no slot for it.
+There is no way to say "the steak should rest for five minutes", "serve the soup first", or "keep the potatoes warm". Resting time in particular is standard practice for exactly the meat this app schedules, and the model has no slot for it. *Closed in Phase 4 for resting; serve order remains open. A dish now has two phases — on the heat, then resting off it — so resting meat lands with everything else, a resting dish occupies no burner for capacity purposes, and the timer announces both putting it on and taking it off. Per-dish serve offsets were explicitly excluded by D4.*
 
 **G26 — The schedule cannot be followed away from the screen.**
 It exists as a live countdown and nothing else — no printable or copyable running order, no "start the chicken at 18:42" wall-clock version. The plan is only legible while the tab is open and the timer is running.

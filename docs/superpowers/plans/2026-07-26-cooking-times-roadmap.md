@@ -22,7 +22,7 @@ These were decided with the user on 2026-07-26 and are binding on the phases bel
 | D6 | **Per-row `itemId` identity.** Duplicate foods are allowed; identity is never `foodId`. | G3 |
 | D7 | **No migrations.** The tool has no users yet, so storage and data shapes may change freely. | Phases 3–5 |
 | D1 | **Per-food cooking option sets.** Each food declares its own named options with durations. Steak keeps rare/medium/well-done; rice gets a single option; pasta gets al dente/soft. Replaces the forced three-tier `cookingTimes` object. | G21, G22 |
-| D2 | **Capacity conflicts are user-selectable.** The scheduler takes a strategy: `warn` (default — today's arithmetic, plus a flagged conflict), `extend` (push the finish later to respect capacity), or `stagger` (let some dishes finish early and keep warm). Default is `warn`. | G13 |
+| D2 | **Capacity conflicts are user-selectable.** `warn` (default — report, change nothing), `stagger` (move dishes earlier; they finish early and keep warm), `extend` (move them later; the meal is ready later). *Corrected in Phase 4 — the original wording had `extend` push the common finish later, which cannot resolve overlap. See Phase 4 below.* | G13 |
 | D3 | **Vendor Alpine and both font families locally** into `static/vendor/`. Makes the app work offline and makes SRI moot, since nothing loads from a third party. Every URL to be shown to the user before fetching. | G16, G17 |
 | D4 | **Optional per-food rest period.** A food may declare a rest; it leaves the heat at `finish − rest` and is ready at `finish`, so resting meat lands with everything else. No per-dish serve offsets. | G25 |
 
@@ -54,10 +54,14 @@ G19 (dark mode) is folded in here rather than into Phase 5 because it is pure CS
 
 Repaid Phase 2's duplicate-rejection debt via D6. That also fixed a latent bug the register had missed: alert regeneration matched on `foodName`, so two portions of one food shared an alert and firing the first silenced the second.
 
-### Phase 4 — Scheduling engine
-**Plan:** to be written on completion of Phase 3.
+### Phase 4 — Scheduling engine ✅
+**Plan:** `2026-07-26-phase-4-scheduling-engine.md`
 **Closes:** G13, G14, G25
-**Ships:** Declared cooking capacity with the three conflict strategies (D2), a transition-time buffer between starts, and rest periods (D4). This is where the "everything finishes together" promise becomes conditional and explicit rather than assumed.
+**Ships:** Declared cooking capacity with the three conflict strategies (D2, as corrected below), a changeover-time buffer between starts, and rest periods (D4). This is where the "everything finishes together" promise becomes conditional and explicit rather than assumed.
+
+**D2 was corrected during planning.** It recorded `extend` as "push the finish later to respect capacity", which is not achievable: with a common finish T, dish i occupies the heat over [T − rest − cook, T − rest], so raising T shifts every interval equally and the overlap is invariant. Overlap depends only on the durations, and any resolution must break the synchronised finish. Restated: `warn` reports and changes nothing; `stagger` moves dishes earlier so they finish early and keep warm (the food waits); `extend` moves them later so the meal is ready later (you wait). Put to the user on 2026-07-26 and confirmed.
+
+The two placers are greedy heuristics, and their asymmetry is documented and tested: nothing can start before t=0, so `stagger` is best-effort — it can do nothing at all when every dish is the same length, and can never beat the ring-time a fixed total allows — whereas `extend` always has room later and always resolves. Residue is reported rather than hidden.
 
 ### Phase 5 — Platform and access
 **Plan:** to be written on completion of Phase 4.
@@ -73,7 +77,7 @@ Every gap in the spec maps to exactly one phase:
 | 1 | G11, G20 | 2 |
 | 2 | G1–G10, G12, G19 | 12 |
 | 3 | G21, G22, G24 closed; G23 partly; G3 debt repaid | 4 |
-| 4 | G13, G14, G25 | 3 |
+| 4 | G13, G14; G25 closed for resting, serve order excluded by D4 | 3 |
 | 5 | G15–G18, G26 | 5 |
 | **Total** | | **26** |
 
