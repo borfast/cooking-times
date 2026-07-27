@@ -40,6 +40,7 @@ test('a single dish starts at zero and sets the total', () => {
             cookDuration: 360,
             heatOffTime: 360,
             restSeconds: 0,
+            serveOffsetSeconds: 0,
             finishTime: 360,
         },
     ]);
@@ -180,6 +181,7 @@ test('a started dish keeps its timings when a waiting dish is removed', () => {
             cookDuration: 1500,
             heatOffTime: 1500,
             restSeconds: 0,
+            serveOffsetSeconds: 0,
             finishTime: 1500,
         },
     ]);
@@ -317,6 +319,7 @@ test('a resting dish comes off the heat before it is ready', () => {
         cookDuration: 480,
         heatOffTime: 480,
         restSeconds: 300,
+        serveOffsetSeconds: 0,
         finishTime: 780,
     });
 });
@@ -380,4 +383,131 @@ test('recalculateSchedule preserves a started dish rest and both invariants', ()
         assert.equal(item.heatOffTime - item.startTime, item.cookDuration);
         assert.equal(item.finishTime - item.heatOffTime, item.restSeconds);
     }
+});
+
+const servedSel = (
+    foodId,
+    cookingTime,
+    serveOffsetSeconds,
+    restSeconds = 0,
+) => ({
+    ...sel(foodId, cookingTime, 'Medium'),
+    restSeconds,
+    serveOffsetSeconds,
+});
+
+test('with no offsets the meal moment is just the total', () => {
+    const result = calculateSchedule([sel('chicken', 1500), sel('kale', 360)]);
+
+    assert.equal(result.mealTime, 1500);
+    assert.equal(result.totalTime, 1500);
+});
+
+test('a dish served early is ready before the meal', () => {
+    // Soup 15 minutes ahead of a chicken that needs 25 to cook and 10 to rest.
+    const result = calculateSchedule([
+        servedSel('chicken', 1500, 0, 600),
+        servedSel('soup', 600, -900),
+    ]);
+
+    assert.equal(result.mealTime, 2100);
+
+    const chicken = result.items.find((item) => item.foodId === 'chicken');
+    const soup = result.items.find((item) => item.foodId === 'soup');
+
+    assert.equal(chicken.finishTime, 2100);
+    assert.equal(chicken.startTime, 0);
+    assert.equal(soup.finishTime, 1200);
+    assert.equal(soup.startTime, 600);
+    assert.equal(result.mealTime - soup.finishTime, 900);
+});
+
+test('a dish served late extends the timeline past the meal', () => {
+    const result = calculateSchedule([
+        servedSel('chicken', 1500, 0),
+        servedSel('bread', 600, 300),
+    ]);
+
+    assert.equal(result.mealTime, 1500);
+    assert.equal(result.totalTime, 1800);
+
+    const bread = result.items.find((item) => item.foodId === 'bread');
+    assert.equal(bread.finishTime, 1800);
+    assert.equal(bread.startTime, 1200);
+});
+
+test('an early dish can be the one that sets the meal moment', () => {
+    // A slow starter served early still has to fit before t=0.
+    const result = calculateSchedule([
+        servedSel('stock', 3000, -600),
+        servedSel('kale', 360, 0),
+    ]);
+
+    assert.equal(result.mealTime, 3600);
+    assert.equal(
+        result.items.find((item) => item.foodId === 'stock').startTime,
+        0,
+    );
+});
+
+test('offsets never push a dish before the start of cooking', () => {
+    const result = calculateSchedule([
+        servedSel('a', 1500, -600),
+        servedSel('b', 900, 300),
+        servedSel('c', 600, 0),
+    ]);
+
+    for (const item of result.items) {
+        assert.ok(
+            item.startTime >= 0,
+            `${item.itemId} starts at ${item.startTime}`,
+        );
+    }
+});
+
+test('offsets combine with resting and keep both invariants', () => {
+    const result = calculateSchedule([
+        servedSel('beef-steak', 480, -300, 300),
+        servedSel('kale', 360, 0),
+    ]);
+
+    for (const item of result.items) {
+        assert.equal(item.heatOffTime - item.startTime, item.cookDuration);
+        assert.equal(item.finishTime - item.heatOffTime, item.restSeconds);
+    }
+
+    const steak = result.items.find((item) => item.foodId === 'beef-steak');
+    assert.equal(steak.finishTime, result.mealTime - 300);
+});
+
+test('recalculateSchedule honours an offset on a waiting dish', () => {
+    const original = [servedSel('chicken', 1500, 0), servedSel('soup', 600, 0)];
+    const current = calculateSchedule(original).items;
+
+    const after = recalculateSchedule(
+        [original[0], { ...original[1], serveOffsetSeconds: -600 }],
+        current,
+        300,
+    );
+
+    const soup = after.items.find((item) => item.foodId === 'soup');
+    assert.equal(after.mealTime - soup.finishTime, 600);
+});
+
+test('recalculateSchedule derives the meal moment from a started dish offset', () => {
+    const original = [
+        servedSel('chicken', 1500, 0),
+        servedSel('soup', 900, -600),
+    ];
+    const before = calculateSchedule(original);
+    const current = before.items;
+
+    // Chicken is on the heat; adding a quick dish must not move the meal moment.
+    const after = recalculateSchedule(
+        [...original, servedSel('kale', 360, 0)],
+        current,
+        300,
+    );
+
+    assert.equal(after.mealTime, before.mealTime);
 });

@@ -73,6 +73,7 @@ test('a food with one option still resolves', () => {
         cookingTime: 1200,
         overridden: false,
         restSeconds: 0,
+        serveOffsetSeconds: 0,
     });
 });
 
@@ -246,5 +247,35 @@ test('the shipped catalogue rests meat and nothing else', () => {
 
     for (const food of foods.filter((f) => f.category !== 'Meat')) {
         assert.ok(!food.restSeconds, `${food.id} should not rest`);
+    }
+});
+
+test('resolveSelection carries a serve offset, defaulting to zero', () => {
+    assert.equal(
+        resolveSelection(catalogue, { itemId: 'i1', foodId: 'rice' })
+            .serveOffsetSeconds,
+        0,
+    );
+    assert.equal(
+        resolveSelection(catalogue, {
+            itemId: 'i1',
+            foodId: 'rice',
+            serveOffsetSeconds: -900,
+        }).serveOffsetSeconds,
+        -900,
+    );
+});
+
+test('a non-numeric serve offset is ignored', () => {
+    for (const bad of ['soon', Number.NaN, null, undefined, {}]) {
+        assert.equal(
+            resolveSelection(catalogue, {
+                itemId: 'i1',
+                foodId: 'rice',
+                serveOffsetSeconds: bad,
+            }).serveOffsetSeconds,
+            0,
+            `offset ${String(bad)} should be ignored`,
+        );
     }
 });

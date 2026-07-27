@@ -6,7 +6,8 @@
  * naming. Option counts of one, two and three are all normal.
  *
  * Food:      { id, name, category, defaultOptionId, options: [ { id, label, seconds } ] }
- * Selection: { itemId, foodId, foodName, optionId, optionLabel, cookingTime, overridden, restSeconds }
+ * Selection: { itemId, foodId, foodName, optionId, optionLabel, cookingTime, overridden,
+ *              restSeconds, serveOffsetSeconds }
  */
 
 export function findFood(catalogue, foodId) {
@@ -62,6 +63,10 @@ export function resolveSelection(catalogue, row) {
             Number.isInteger(food.restSeconds) && food.restSeconds > 0
                 ? food.restSeconds
                 : 0,
+        // G25: signed. Negative is served before the meal, positive after.
+        serveOffsetSeconds: Number.isFinite(Number(row.serveOffsetSeconds))
+            ? Math.round(Number(row.serveOffsetSeconds))
+            : 0,
     };
 }
 
