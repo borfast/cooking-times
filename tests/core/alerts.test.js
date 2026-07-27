@@ -301,3 +301,170 @@ test('regenerateAlerts preserves a fired off-the-heat alert', () => {
         true,
     );
 });
+
+const offsetSchedule = {
+    mealTime: 2100,
+    totalTime: 2100,
+    items: [
+        {
+            itemId: 'r0',
+            foodId: 'chicken',
+            foodName: 'Chicken',
+            optionLabel: 'Cooked through',
+            startTime: 0,
+            cookDuration: 1500,
+            heatOffTime: 1500,
+            restSeconds: 600,
+            serveOffsetSeconds: 0,
+            finishTime: 2100,
+        },
+        {
+            itemId: 'r1',
+            foodId: 'soup',
+            foodName: 'Soup',
+            optionLabel: 'Cooked',
+            startTime: 600,
+            cookDuration: 600,
+            heatOffTime: 1200,
+            restSeconds: 0,
+            serveOffsetSeconds: -900,
+            finishTime: 1200,
+        },
+    ],
+};
+
+test('a dish served away from the meal gets its own ready alert', () => {
+    const soup = generateAlerts(offsetSchedule).filter(
+        (alert) => alert.itemId === 'r1',
+    );
+
+    assert.deepEqual(
+        soup.map((alert) => [alert.type, alert.triggerTime]),
+        [
+            ['food-start', 600],
+            ['food-ready', 1200],
+        ],
+    );
+    assert.match(soup[1].message, /Soup is ready/);
+});
+
+test('a dish served with the meal gets no separate ready alert', () => {
+    // The finale already covers it; a second announcement would be noise.
+    const chicken = generateAlerts(offsetSchedule).filter(
+        (alert) => alert.itemId === 'r0',
+    );
+    assert.deepEqual(
+        chicken.map((alert) => alert.type),
+        ['food-start', 'food-rest'],
+    );
+});
+
+test('regenerateAlerts preserves a fired ready alert', () => {
+    const existing = generateAlerts(offsetSchedule);
+    existing.find((alert) => alert.type === 'food-ready').triggered = true;
+
+    const next = regenerateAlerts(offsetSchedule, existing, 1300);
+
+    assert.equal(
+        next.find((alert) => alert.type === 'food-ready').triggered,
+        true,
+    );
+});
+
+const lateDishSchedule = {
+    mealTime: 2100,
+    totalTime: 2700,
+    items: [
+        {
+            itemId: 'r0',
+            foodId: 'chicken',
+            foodName: 'Chicken',
+            optionLabel: 'Cooked through',
+            startTime: 0,
+            cookDuration: 2100,
+            heatOffTime: 2100,
+            restSeconds: 0,
+            serveOffsetSeconds: 0,
+            finishTime: 2100,
+        },
+        {
+            itemId: 'r1',
+            foodId: 'pasta',
+            foodName: 'Pasta',
+            optionLabel: 'Al dente',
+            startTime: 2220,
+            cookDuration: 480,
+            heatOffTime: 2700,
+            restSeconds: 0,
+            serveOffsetSeconds: 600,
+            finishTime: 2700,
+        },
+    ],
+};
+
+test('with nothing served late, one finale announces the meal', () => {
+    const finales = generateAlerts(schedule).filter(
+        (alert) => alert.type === 'all-done',
+    );
+
+    assert.equal(finales.length, 1);
+    assert.equal(finales[0].triggerTime, schedule.totalTime);
+    assert.match(finales[0].message, /meal is ready/i);
+});
+
+test('a late dish gets the meal its own announcement at the meal moment', () => {
+    const alerts = generateAlerts(lateDishSchedule);
+
+    const meal = alerts.find((alert) => alert.type === 'meal-ready');
+    assert.equal(
+        meal.triggerTime,
+        2100,
+        'the meal is announced when it is actually ready',
+    );
+    assert.match(meal.message, /meal is ready/i);
+});
+
+test('with a late dish the finale stops claiming the meal is ready', () => {
+    // It fires when the straggler lands, ten minutes after the meal.
+    const finale = generateAlerts(lateDishSchedule).find(
+        (alert) => alert.type === 'all-done',
+    );
+
+    assert.equal(finale.triggerTime, 2700);
+    assert.ok(!/meal is ready/i.test(finale.message), finale.message);
+    assert.match(finale.message, /everything/i);
+});
+
+test('regenerateAlerts preserves a fired meal announcement', () => {
+    const existing = generateAlerts(lateDishSchedule);
+    existing.find((alert) => alert.type === 'meal-ready').triggered = true;
+
+    const next = regenerateAlerts(lateDishSchedule, existing, 2200);
+
+    assert.equal(
+        next.find((alert) => alert.type === 'meal-ready').triggered,
+        true,
+    );
+});
+
+test('the meal announcement sorts into place among the dish alerts', () => {
+    // partitionDueAlerts treats the last newly-due alert as the most recent one,
+    // so an out-of-order closing alert would announce the wrong thing after a gap.
+    const fromGenerate = generateAlerts(lateDishSchedule).map(
+        (a) => a.triggerTime,
+    );
+    assert.deepEqual(
+        fromGenerate,
+        [...fromGenerate].sort((a, b) => a - b),
+        'generateAlerts',
+    );
+
+    const fromRegenerate = regenerateAlerts(lateDishSchedule, [], 0).map(
+        (a) => a.triggerTime,
+    );
+    assert.deepEqual(
+        fromRegenerate,
+        [...fromRegenerate].sort((a, b) => a - b),
+        'regenerateAlerts',
+    );
+});

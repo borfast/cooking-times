@@ -184,7 +184,7 @@ h2 {
 
 .food-item {
     display: grid;
-    grid-template-columns: minmax(160px, 1.1fr) minmax(130px, 0.7fr) auto auto;
+    grid-template-columns: minmax(150px, 1fr) minmax(120px, 0.6fr) auto auto auto;
     gap: 1rem;
     align-items: center;
     padding: 1rem;
@@ -902,4 +902,30 @@ a:focus-visible {
         box-shadow: none;
         border: 1px solid #999;
     }
+}
+
+/* G25: serving a dish away from the common finish. */
+.serve-offset {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.serve-offset-input {
+    width: 4.5rem;
+    text-align: right;
+}
+
+.serve-offset-unit {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+}
+
+.food-item--offset {
+    border-color: color-mix(in srgb, var(--color-success) 45%, transparent);
+}
+
+.time--offset {
+    color: var(--color-success);
+    font-weight: 500;
 }

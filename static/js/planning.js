@@ -126,7 +126,7 @@ function refreshTimeField(row) {
     row.classList.toggle('food-item--overridden', Boolean(override));
 }
 
-function addRow(foodId = '', optionId = '') {
+function addRow(foodId = '', optionId = '', serveOffsetSeconds = 0) {
     const list = document.getElementById('food-list');
     const itemId = `row-${rowCounter++}`;
 
@@ -173,13 +173,36 @@ function addRow(foodId = '', optionId = '') {
 
     timeWrap.append(timeField, timeUnit, resetButton);
 
+    // G25: when this dish should be ready, relative to the meal. Negative is
+    // earlier, which is the common case -- a starter.
+    const serveWrap = document.createElement('div');
+    serveWrap.className = 'serve-offset';
+
+    const serveField = document.createElement('input');
+    serveField.type = 'number';
+    serveField.min = '-120';
+    serveField.max = '120';
+    serveField.step = '5';
+    serveField.value = '0';
+    serveField.className = 'serve-offset-input';
+    serveField.setAttribute(
+        'aria-label',
+        'Serve relative to the meal, in minutes. Negative is earlier, positive is later.',
+    );
+
+    const serveUnit = document.createElement('span');
+    serveUnit.className = 'serve-offset-unit';
+    serveUnit.textContent = 'min';
+
+    serveWrap.append(serveField, serveUnit);
+
     const removeButton = document.createElement('button');
     removeButton.className = 'btn btn-danger btn-icon';
     removeButton.type = 'button';
     removeButton.setAttribute('aria-label', 'Remove food');
     removeButton.textContent = '✕';
 
-    row.append(foodSelect, optionSelect, timeWrap, removeButton);
+    row.append(foodSelect, optionSelect, timeWrap, serveWrap, removeButton);
     list.appendChild(row);
 
     foodSelect.addEventListener('change', () => {
@@ -222,6 +245,14 @@ function addRow(foodId = '', optionId = '') {
         updateSchedule();
     });
 
+    serveField.addEventListener('change', () => {
+        row.classList.toggle(
+            'food-item--offset',
+            Number(serveField.value) !== 0,
+        );
+        updateSchedule();
+    });
+
     resetButton.addEventListener('click', () => {
         const food = findFood(foods, foodSelect.value);
         if (!food) {
@@ -237,6 +268,9 @@ function addRow(foodId = '', optionId = '') {
         updateSchedule();
     });
 
+    serveField.value = String(Math.round((serveOffsetSeconds || 0) / 60));
+    row.classList.toggle('food-item--offset', Boolean(serveOffsetSeconds));
+
     refreshTimeField(row);
     return row;
 }
@@ -250,7 +284,7 @@ function restoreRows() {
     }
 
     for (const row of saved) {
-        addRow(row.foodId, row.optionId);
+        addRow(row.foodId, row.optionId, row.serveOffsetSeconds);
     }
     updateSchedule();
 }
@@ -273,6 +307,10 @@ function updateSchedule() {
             foodId,
             optionId,
             overrideSeconds: overrides[`${foodId}:${optionId}`],
+            serveOffsetSeconds:
+                Math.round(
+                    Number(row.querySelector('.serve-offset-input').value) || 0,
+                ) * 60,
         });
 
         if (selection) {
@@ -314,6 +352,11 @@ function displaySchedule(result) {
                 </div>
                 <div class="time">Cook for: ${formatMinutes(item.cookDuration)} minutes</div>
                 ${
+                    item.serveOffsetSeconds
+                        ? `<div class="time time--offset">Ready ${formatMinutes(Math.abs(item.serveOffsetSeconds))} min ${item.serveOffsetSeconds < 0 ? 'before' : 'after'} the meal</div>`
+                        : ''
+                }
+                ${
                     item.restSeconds > 0
                         ? `<div class="time">Off the heat at ${formatTime(item.heatOffTime)}, then rest ${formatMinutes(item.restSeconds)} min</div>`
                         : ''
@@ -322,7 +365,10 @@ function displaySchedule(result) {
         `;
     });
 
-    html += `<div class="total-time">Total Time: ${formatMinutes(result.totalTime)} minutes</div>`;
+    const staggered = result.items.some((item) => item.serveOffsetSeconds);
+    html += `<div class="total-time">Total Time: ${formatMinutes(result.totalTime)} minutes${
+        staggered ? ` — the meal is at ${formatTime(result.mealTime)}` : ''
+    }</div>`;
 
     output.innerHTML = html;
     section.style.display = 'block';

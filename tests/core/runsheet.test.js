@@ -97,3 +97,106 @@ test('runsheetText handles an empty schedule without throwing', () => {
     const text = runsheetText({ items: [], totalTime: 0 }, { readyAt: null });
     assert.equal(typeof text, 'string');
 });
+
+const staggered = {
+    mealTime: 2100,
+    totalTime: 2100,
+    items: [
+        {
+            itemId: 'r0',
+            foodName: 'Chicken',
+            optionLabel: 'Cooked through',
+            startTime: 0,
+            cookDuration: 1500,
+            heatOffTime: 1500,
+            restSeconds: 600,
+            serveOffsetSeconds: 0,
+            finishTime: 2100,
+        },
+        {
+            itemId: 'r1',
+            foodName: 'Soup',
+            optionLabel: 'Cooked',
+            startTime: 600,
+            cookDuration: 600,
+            heatOffTime: 1200,
+            restSeconds: 0,
+            serveOffsetSeconds: -900,
+            finishTime: 1200,
+        },
+    ],
+};
+
+test('runsheetText says when a dish is served away from the meal', () => {
+    const text = runsheetText(staggered, { readyAt: null });
+    assert.match(text, /Soup.*15 min before the meal/s);
+});
+
+test('runsheetText says nothing extra for a dish served with the meal', () => {
+    const line = runsheetText(staggered, { readyAt: null })
+        .split('\n')
+        .find((l) => l.includes('Chicken'));
+    assert.ok(!/before the meal|after the meal/.test(line));
+});
+
+test('runsheetText gives the meal moment its own clock time when staggered', () => {
+    const text = runsheetText(staggered, { readyAt: 1170 });
+    // Meal at 19:30; the soup lands 15 minutes earlier, at 19:15.
+    assert.match(text, /19:15/);
+    assert.match(text, /Ready at 19:30/);
+});
+
+test('the serve time anchors the meal, not the last dish out of the oven', () => {
+    // Pasta is served 10 minutes after the meal. Asking for a 19:30 meal must put
+    // the meal at 19:30 and the pasta at 19:40 -- not drag the meal back to 19:20
+    // so that the late dish lands on the requested time.
+    const lateDish = {
+        mealTime: 2100,
+        totalTime: 2700,
+        items: [
+            {
+                itemId: 'r0',
+                foodName: 'Chicken',
+                optionLabel: 'Cooked through',
+                startTime: 0,
+                cookDuration: 1500,
+                heatOffTime: 1500,
+                restSeconds: 600,
+                serveOffsetSeconds: 0,
+                finishTime: 2100,
+            },
+            {
+                itemId: 'r1',
+                foodName: 'Pasta',
+                optionLabel: 'Al dente',
+                startTime: 2100,
+                cookDuration: 600,
+                heatOffTime: 2700,
+                restSeconds: 0,
+                serveOffsetSeconds: 600,
+                finishTime: 2700,
+            },
+        ],
+    };
+
+    const times = clockTimes(lateDish.items, 1170, lateDish.mealTime);
+    assert.equal(
+        times.get('r0').ready,
+        '19:30',
+        'the meal dish lands on the serve time',
+    );
+    assert.equal(
+        times.get('r1').ready,
+        '19:40',
+        'the late dish lands after it',
+    );
+
+    const text = runsheetText(lateDish, { readyAt: 1170 });
+    assert.match(text, /Ready at 19:30/);
+    assert.match(text, /19:40, 10 min after the meal/);
+});
+
+test('clockTimes still anchors on the last dish when no meal moment is given', () => {
+    const times = clockTimes(result.items, 1170);
+    assert.equal(times.get('r0').start, '19:17');
+});

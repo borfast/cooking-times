@@ -4,7 +4,7 @@
  * worth announcing is this module's.
  */
 
-/** The alerts one dish generates: going on, and coming off to rest if it rests. */
+/** The alerts one dish generates: going on, coming off to rest, and being ready. */
 function alertsForItem(item, triggeredAt) {
     const isTriggered = (time) =>
         triggeredAt === null ? false : triggeredAt >= time;
@@ -33,6 +33,19 @@ function alertsForItem(item, triggeredAt) {
         });
     }
 
+    // G25: a dish served away from the meal needs announcing on its own, since
+    // the finale will not cover it. A dish landing with the meal does not.
+    if (item.serveOffsetSeconds) {
+        alerts.push({
+            type: 'food-ready',
+            triggerTime: item.finishTime,
+            itemId: item.itemId,
+            foodName: item.foodName,
+            message: `${item.foodName} is ready.`,
+            triggered: isTriggered(item.finishTime),
+        });
+    }
+
     return alerts;
 }
 
@@ -40,19 +53,57 @@ function byTriggerTime(a, b) {
     return a.triggerTime - b.triggerTime;
 }
 
-/** One alert per dish start, one per rest, plus a finale for the meal. */
-export function generateAlerts(schedule) {
-    const alerts = schedule.items.flatMap((item) => alertsForItem(item, null));
-    alerts.sort(byTriggerTime);
+/**
+ * The closing alerts: the meal itself, and the end of the timeline.
+ *
+ * These are usually the same moment. When something is served late they are not,
+ * and conflating them would announce "your meal is ready" after the meal has been
+ * sitting there going cold — so the meal gets its own announcement on time and
+ * the finale stops claiming to be it.
+ */
+function closingAlerts(schedule, triggeredAt) {
+    const isTriggered = (time) =>
+        triggeredAt === null ? false : triggeredAt >= time;
+    const mealTime = Number.isFinite(schedule.mealTime)
+        ? schedule.mealTime
+        : schedule.totalTime;
+    const somethingIsLate = mealTime < schedule.totalTime;
+
+    const alerts = [];
+
+    if (somethingIsLate) {
+        alerts.push({
+            type: 'meal-ready',
+            triggerTime: mealTime,
+            itemId: null,
+            foodName: '',
+            message: 'The meal is ready.',
+            triggered: isTriggered(mealTime),
+        });
+    }
 
     alerts.push({
         type: 'all-done',
         triggerTime: schedule.totalTime,
         itemId: null,
         foodName: '',
-        message: 'All done! Your meal is ready!',
-        triggered: false,
+        message: somethingIsLate
+            ? 'Everything is done.'
+            : 'All done! Your meal is ready!',
+        triggered: isTriggered(schedule.totalTime),
     });
+
+    return alerts;
+}
+
+/** Alerts for every dish phase that needs announcing, plus the closing alerts. */
+export function generateAlerts(schedule) {
+    const alerts = schedule.items.flatMap((item) => alertsForItem(item, null));
+    alerts.push(...closingAlerts(schedule, null));
+    // Sort last: the closing alerts are not necessarily last in time. A dish
+    // served late finishes after the meal, and partitionDueAlerts relies on the
+    // list being in trigger order to pick the most recent one out of a backlog.
+    alerts.sort(byTriggerTime);
 
     return alerts;
 }
@@ -82,17 +133,17 @@ export function regenerateAlerts(schedule, existingAlerts, elapsedSeconds) {
                 : alert;
         }),
     );
+    alerts.push(
+        ...closingAlerts(schedule, elapsedSeconds).map((alert) => {
+            const previous = existing.find(
+                (candidate) => candidate.type === alert.type,
+            );
+            return previous
+                ? { ...alert, triggered: previous.triggered }
+                : alert;
+        }),
+    );
     alerts.sort(byTriggerTime);
-
-    const previousFinale = existing.find((alert) => alert.type === 'all-done');
-    alerts.push({
-        type: 'all-done',
-        triggerTime: schedule.totalTime,
-        itemId: null,
-        foodName: '',
-        message: 'All done! Your meal is ready!',
-        triggered: previousFinale ? previousFinale.triggered : false,
-    });
 
     return alerts;
 }
