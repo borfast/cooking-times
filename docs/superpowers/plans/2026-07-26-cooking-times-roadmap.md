@@ -130,6 +130,13 @@ Revised standing:
 
 | Status | Gaps |
 | --- | --- |
-| Closed | G1–G12, G15–G22, G24, G26 |
-| Partly closed | G23 (times correctable, not modelled), G25 (resting yes, serve order excluded by D4) |
+| Closed | G1–G12, G15–G26 except G13/G14 |
 | Open, deliberately accepted | G13, G14 |
+
+## Revision, 2026-07-27
+
+**G23 closed as designed.** Reviewed with the user: the correctable-and-remembered time *is* the answer, not a shortfall. Modelling quantity, thickness and method means inventing coefficients, and a fabricated number presented as arithmetic is worse than a fixed one the cook can see is approximate.
+
+**G25 fully closed.** Serve order landed as a per-dish signed offset. The schedule now has a meal moment distinct from the end of the timeline; with every offset at zero the two coincide and the arithmetic is unchanged.
+
+Two defects in that feature were caught by reading real output rather than by test: the serve time was anchored to the end of the timeline instead of the meal, and the finale announced "your meal is ready" after a late dish rather than at the meal. Both are pinned by tests now. That makes five defects this project has produced that the unit suite was structurally unable to see.
