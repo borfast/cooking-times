@@ -12,7 +12,7 @@
  * Bump CACHE_VERSION when any shell file changes.
  */
 
-const CACHE_VERSION = 'cooking-times-v1';
+const CACHE_VERSION = 'cooking-times-v2';
 
 const SHELL = [
     './',

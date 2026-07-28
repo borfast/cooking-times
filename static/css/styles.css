@@ -2,6 +2,10 @@
 
 :root {
     color-scheme: light dark;
+    /* Reserve the scrollbar's width always. Showing a message makes the page
+       taller, and without this the scrollbar's arrival nudges the whole layout
+       sideways. */
+    scrollbar-gutter: stable;
     --font-display: "Fraunces", "Playfair Display", "Georgia", serif;
     --font-sans: "Manrope", "Figtree", "Noto Sans", sans-serif;
     --color-ink: #15161a;
@@ -12,6 +16,9 @@
     --color-warning: #f4a933;
     --color-danger: #e5484d;
     --color-border: rgba(15, 23, 42, 0.12);
+    /* Derived from --color-ink, so it follows the theme without a dark-mode
+       counterpart. Used for the select's drawn arrow. */
+    --color-field-mark: color-mix(in srgb, var(--color-ink) 55%, transparent);
     --color-panel: rgba(255, 255, 255, 0.92);
     --color-panel-strong: #ffffff;
     --shadow-card: 0 24px 60px -40px rgba(15, 23, 42, 0.45);
@@ -127,6 +134,15 @@ h2 {
     background: rgba(43, 182, 115, 0.12);
     border-color: rgba(43, 182, 115, 0.35);
     color: #1b6b46;
+}
+
+/* The planning page's status region is page-level, not one of the panels, so it
+   sits above .layout rather than inside it. Anything spanning every column of an
+   auto-fit grid keeps the empty track from collapsing, which resized both panels
+   and opened a blank column on the right. */
+.planner {
+    display: grid;
+    gap: clamp(1.5rem, 3vw, 2.25rem);
 }
 
 .layout {
@@ -251,20 +267,39 @@ h2 {
 }
 
 select,
+input[type="text"],
+input[type="number"],
+input[type="time"],
 .btn {
     font-family: var(--font-sans);
     font-size: 1rem;
     border-radius: var(--radius-sm);
 }
 
+/* `color-scheme: light dark` gives form controls *dark* UA defaults in dark mode,
+   and that default text colour is white. So anything setting a control's
+   background must set its colour too, or it renders white on white. Light mode
+   only ever looked right because the UA default happened to be black.
+   Inputs are listed alongside selects deliberately: they had no rule at all, so
+   they rendered as raw browser controls beside carefully styled neighbours. */
+select,
+input[type="text"],
+input[type="number"],
+input[type="time"] {
+    color: var(--color-ink);
+    background-color: var(--color-panel-strong);
+    border: 1px solid var(--color-border);
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition);
+}
+
 select {
     appearance: none;
     padding: 0.75rem 2.5rem 0.75rem 0.9rem;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    background-color: #fff;
     background-image:
-        linear-gradient(45deg, transparent 50%, rgba(15, 23, 42, 0.55) 50%),
-        linear-gradient(135deg, rgba(15, 23, 42, 0.55) 50%, transparent 50%);
+        linear-gradient(45deg, transparent 50%, var(--color-field-mark) 50%),
+        linear-gradient(135deg, var(--color-field-mark) 50%, transparent 50%);
     background-position:
         calc(100% - 1.1rem) 1.1rem,
         calc(100% - 0.85rem) 1.1rem;
@@ -272,12 +307,29 @@ select {
         6px 6px,
         6px 6px;
     background-repeat: no-repeat;
-    transition:
-        border-color var(--transition),
-        box-shadow var(--transition);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="time"] {
+    padding: 0.75rem 0.9rem;
+}
+
+/* The open dropdown is drawn by the platform and does not reliably inherit the
+   closed control's colours, so state them here too. */
+option,
+optgroup {
+    color: var(--color-ink);
+    background-color: var(--color-panel-strong);
+}
+
+::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
 }
 
 select:focus-visible,
+input:focus-visible,
 .btn:focus-visible,
 a:focus-visible {
     outline: 3px solid rgba(255, 107, 74, 0.35);
@@ -455,11 +507,14 @@ a:focus-visible {
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.96);
+    /* Same defect as the selects had, and worse here: a hard-coded white
+       background under theme-aware ink put white text on white in dark mode, on
+       the one message the cook must not miss. Opaque on purpose — it overlays. */
+    background: var(--color-panel-strong);
     padding: 1.5rem;
     border-radius: var(--radius-lg);
-    box-shadow: 0 20px 50px -32px rgba(15, 23, 42, 0.5);
-    border: 1px solid rgba(15, 23, 42, 0.12);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-border);
     max-width: 90%;
     width: 420px;
     text-align: center;
@@ -588,12 +643,13 @@ a:focus-visible {
     gap: 0.5rem;
 }
 
+/* Only the metrics differ from a normal select: colour and border come from the
+   shared rule, which is the whole point — this one used to hard-code its own
+   white background and so went invisible in dark mode too. */
 .option-edit-select {
     padding: 0.5rem 2.2rem 0.5rem 0.75rem;
     font-size: 0.9rem;
-    border: 1px solid rgba(15, 23, 42, 0.18);
     border-radius: var(--radius-sm);
-    background-color: #fff;
     cursor: pointer;
 }
 
