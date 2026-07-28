@@ -1,8 +1,11 @@
 # Handoff — next session
 
 **Written:** 2026-07-28
-**Status:** Nothing here is implemented. This is an agreed design idea plus three
-verified UI defects, written down so a fresh session can pick them up cold.
+**Status:** Partly superseded. **2a and 2b are now fixed** — see
+`2026-07-28-ui-remediation-plan.md`, which also carries a much longer list of
+defects found while verifying them, and the agreed order for fixing those.
+Still open and untouched here: **Part 1** (manual dish timers) and **2c** (an
+explicit light/dark toggle).
 
 ## Where the project stands
 
@@ -121,7 +124,7 @@ user, not just for the code.
 All three were verified in a browser, not inferred. Measurements below are from
 computed styles with `prefers-color-scheme: dark` emulated.
 
-## 2a. Selects are invisible in dark mode — white on white
+## 2a. Selects are invisible in dark mode — white on white — **FIXED 2026-07-28**
 
 **This is a real bug affecting every `<select>` in the app**, not only the one in
 the "Add your own food" section where it was noticed.
@@ -152,7 +155,7 @@ While there: the stylesheet has roughly a dozen other hard-coded
 `rgba(15, 23, 42, …)` borders and shadows that do not respond to dark mode. Worth
 sweeping them into variables in the same pass.
 
-## 2b. The "Add your own food" section looks alien
+## 2b. The "Add your own food" section looks alien — **FIXED 2026-07-28**
 
 Same root cause, different symptom: **the stylesheet has never styled `input` at
 all.** There is a rule for `select` and `.btn`, and two width-only rules for
@@ -195,8 +198,14 @@ system", with follow-the-system as the default so current behaviour is preserved
 
 ## Suggested order
 
-2a and 2b first: they are small, share a root cause, and 2a is a genuine
-readability bug on a shipped app. 2c next, since doing it after the control
-styling is fixed means the toggle can be verified against controls that actually
-respond to the theme. Part 1 last — it is a feature with four open decisions and
-deserves its own planning pass.
+2a and 2b are done. What remains from this document:
+
+**2c** is now well-timed, since the control styling it needed to be verified
+against is in place — but do it *after* the contrast work in
+`2026-07-28-ui-remediation-plan.md` (P1b). That pass moves the last hardcoded
+light-mode hexes into custom properties, and a manual toggle that has to win in
+both directions is much easier to get right once every colour actually responds
+to the theme.
+
+**Part 1** last — it is a feature with four open decisions and deserves its own
+planning pass.
