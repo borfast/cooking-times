@@ -140,3 +140,11 @@ Revised standing:
 **G25 fully closed.** Serve order landed as a per-dish signed offset. The schedule now has a meal moment distinct from the end of the timeline; with every offset at zero the two coincide and the arithmetic is unchanged.
 
 Two defects in that feature were caught by reading real output rather than by test: the serve time was anchored to the end of the timeline instead of the meal, and the finale announced "your meal is ready" after a late dish rather than at the meal. Both are pinned by tests now. That makes five defects this project has produced that the unit suite was structurally unable to see.
+
+
+## Next up, 2026-07-28
+
+Not started. See [`../2026-07-28-next-session-handoff.md`](../2026-07-28-next-session-handoff.md) for the detail.
+
+- **Manual dish timers.** Anchor each dish's countdown to when the cook actually started it, rather than to a single global clock. One global auto/manual toggle, per-dish play buttons disabled when automatic. Closes G14 by removing the assumption rather than modelling it. Four decisions still open, listed in the handoff.
+- **Three UI fixes.** Every `<select>` is white-on-white in dark mode (verified, 1:1 contrast); `input` has never been styled at all, which is why the "Add your own food" section looks alien; and a light/dark toggle is wanted in the header. The first two share one root cause — `color-scheme: light dark` was added for G19 without the control styling being ready for it.
