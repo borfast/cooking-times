@@ -19,3 +19,7 @@ Thumbs.db
 
 # Tooling output
 .playwright-mcp/
+
+# Design-hook state: per-session edit counters and absolute local paths.
+# The critique snapshots alongside it are kept -- the remediation plan cites them.
+.impeccable/hook.cache.json
